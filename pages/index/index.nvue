@@ -19,9 +19,12 @@
 		
 		<block v-for="(item,index) in list" :key="index">
 			<uni-swipe-action :options="options" @click="bindClick($event, item)">
-				<view class="py-1 pl-3 flex-row">
-					<text class="text-dark font-sm">{{ item.title }}</text>
-					<text class="iconfont2 pl pt text-muted">&#xe605;</text>
+				<view class="p-1 flex-row border">
+					<image :src="item.titlepic" mode="widthFix" class="flex-1 mr"></image>
+					<view class="a-center" style="flex: 3;">
+						<text class="text-dark font-sm">{{ item.title }}</text>
+						<text class="iconfont2 pl pt text-muted">&#xe605;</text>
+					</view>
 				</view>
 			</uni-swipe-action>
 		</block>
@@ -61,6 +64,17 @@
 			})
 		},
 		onLoad: function(e) {
+			
+			// #ifdef APP-PLUS
+			const domModule = weex.requireModule('dom')
+			domModule.addRule('fontFace', {  
+			    'fontFamily': "iconfont2",  
+				// 'src': "url('https://at.alicdn.com/t/font_1494388_6p8busou8bx.ttf')"
+				'src': "url('"+"file://" + plus.io.convertLocalFileSystemURL("_www/static/iconfont.ttf") +"')"
+			});
+			// #endif
+			
+			
 			let data = []
 			for (let i = 0; i <= 50; i++) {
 				data.push({
