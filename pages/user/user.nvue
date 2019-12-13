@@ -1,0 +1,22 @@
+<template>
+	<view class="j-center a-center">
+		<text class="pt-5">User</text>
+	</view>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				
+			}
+		},
+		methods: {
+			
+		}
+	}
+</script>
+
+<style>
+
+</style>

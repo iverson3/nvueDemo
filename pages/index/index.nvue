@@ -1,0 +1,118 @@
+<template>
+	<view>
+		<view class="a-center py-3 text-center">
+			<text>Index</text>
+		</view>
+		
+		<view class="flex-row">
+			<text @click="showLogin" class="flex-1 iconfont2 text-center">&#xe772;</text>
+			<text class="flex-1 iconfont2 text-center font-lg">&#xe615;</text>
+			<text class="flex-1 iconfont2 text-center font-sm">&#xe60a;</text>
+			<text class="flex-1 iconfont2 text-center">&#xe605;</text>
+		</view>
+		
+		<view class="w-100 flex-row border rounded" style="height: 50upx;">
+			<text class="text-white ml-3 bg-secondary">111111</text>
+			<text class="text-muted ml-3">22222</text>
+			<text class="text-muted ml-3">33333</text>
+		</view>
+		
+		<block v-for="(item,index) in list" :key="index">
+			<uni-swipe-action :options="options" @click="bindClick($event, item)">
+				<view class="py-1 pl-3 flex-row">
+					<text class="text-dark font-sm">{{ item.title }}</text>
+					<text class="iconfont2 pl pt text-muted">&#xe605;</text>
+				</view>
+			</uni-swipe-action>
+		</block>
+	</view>
+</template>
+
+<script>
+	import uniSwipeAction from '@/components/uni-ui/uni-swipe-action/uni-swipe-action.vue'
+	import importIcon from '@/common/mixin/importIcon.js'
+	import {mapState, mapMutations} from 'vuex'
+	
+	export default {
+		mixins: [importIcon],
+		components: {
+			uniSwipeAction
+		},
+		data() {
+			return {
+				list: [],
+				
+				options: [{
+					text: '修改',
+					style: {
+						backgroundColor: '#007aff'
+					}
+				}, {
+					text: '删除',
+					style: {
+						backgroundColor: '#dd524d'
+					}
+				}]
+			}
+		},
+		computed: {
+			...mapState({
+				loginStatus: (state) => state.user.loginStatus
+			})
+		},
+		onLoad: function(e) {
+			let data = []
+			for (let i = 0; i <= 50; i++) {
+				data.push({
+					id: i,
+					title: "title title title  " + i,
+					titlepic: "https://yanxuan-item.nosdn.127.net/4c536c4ea486f8d5c8a172bfaaf5b680.png",
+					desc: "天鹅绒面，丝绒时髦高级感 " + i,
+					pprice: "200.00",
+					comment_num: i + 1,
+					good_num: i + "%"
+				})
+			}
+			this.list = data
+			
+			// 获取globalData全局数据 (全端通用)
+			let appName = getApp().globalData.appName
+			console.log(appName);
+			
+			console.log(this.$store.state.user);
+			console.log(this.$store.state.user.loginStatus);
+		},
+		onShow: function() {
+			console.log('page show');
+		},
+		methods: {
+			showLogin: function() {
+				console.log(this.loginStatus);
+			},
+			
+			bindClick(e, item) {
+				switch (e.index){
+					case 0:  // 修改
+						uni.showToast({title: '修改', icon: 'none'});
+						break;
+					case 1:  // 删除
+						uni.showModal({
+							content: "确定要删除吗？",
+							success: (res) => {
+								if (res.confirm) {
+									uni.showToast({title: "删除成功"})
+								}
+							}
+						})
+						break;
+					default:
+						break;
+				}
+			}
+		}
+	}
+</script>
+
+<style>
+	
+</style>
