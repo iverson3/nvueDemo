@@ -1,49 +1,83 @@
 <template>
 	<view>
-		<view class="a-center py-3 text-center">
-			<text>Index</text>
-		</view>
 		
-		<view class="flex-row">
-			<text @click="showLogin" class="flex-1 iconfont2 text-center">&#xe772;</text>
-			<text class="flex-1 iconfont2 text-center font-lg">&#xe615;</text>
-			<text class="flex-1 iconfont2 text-center font-sm">&#xe60a;</text>
-			<text class="flex-1 iconfont2 text-center">&#xe605;</text>
-		</view>
-		
-		<view class="w-100 flex-row border rounded" style="height: 50upx;">
-			<text class="text-white ml-3 bg-secondary">111111</text>
-			<text class="text-muted ml-3">22222</text>
-			<text class="text-muted ml-3">33333</text>
-		</view>
-		
-		<block v-for="(item,index) in list" :key="index">
-			<uni-swipe-action :options="options" @click="bindClick($event, item)">
-				<view class="p-1 flex-row border">
-					<image :src="item.titlepic" mode="widthFix" class="flex-1 mr"></image>
-					<view class="a-center" style="flex: 3;">
-						<text class="text-dark font-sm">{{ item.title }}</text>
-						<text class="iconfont2 pl pt text-muted">&#xe605;</text>
+		<list :show-scrollbar="false" class="w-100 h-100">
+			<template v-if="list.length > 0">
+				<!-- 下拉刷新 -->
+				<refresh style="height: 80px;" 
+				class="w-100 flex-row j-center a-center"
+				@refresh="refreshList" 
+				@pullingdown="pullingdown" 
+				:display="refreshShow">
+					<text class="font-md text-muted">{{ refreshtext }}</text>
+				</refresh>
+			</template>
+			
+			<header>
+				<view class="bg-white">
+					<view class="flex-row">
+						<text @click="showLogin" class="flex-1 iconfont2 text-center">&#xe64c;</text>
+						<text class="flex-1 iconfont2 text-center font-lg">&#xe615;</text>
+						<text class="flex-1 iconfont2 text-center font-sm">&#xe643;</text>
+						<text class="flex-1 iconfont2 text-center">&#xe7eb;</text>
+					</view>
+					
+					<view class="w-100 flex-row border rounded" style="height: 50upx;">
+						<text class="text-white ml-3 bg-secondary">111111</text>
+						<text class="text-muted ml-3">22222</text>
+						<text class="text-muted ml-3">33333</text>
 					</view>
 				</view>
-			</uni-swipe-action>
-		</block>
+			</header>
+			
+			<cell v-for="(item,index) in list" :key="index">
+				<uni-swipe-action :options="options" @click="bindClick($event, item)">
+					<view class="p-1 flex-row border" style="height: auto;">
+						<image :src="item.titlepic" mode="widthFix" class="mr-1" style="flex: 2;max-height: 140upx;"></image>
+						<view class="a-center" style="flex: 7;align-items: flex-start;">
+							<text class="text-dark font-sm">{{ item.title }}</text>
+							<text class="iconfont2 pt text-muted" style="font-size: 30upx;">{{ item.desc }}</text>
+						</view>
+						<view class="flex-1 j-center">
+							<text class="iconfont2">&#xe63f;</text>
+						</view>
+					</view>
+				</uni-swipe-action>
+			</cell>
+			
+			<template v-if="list.length > 0">
+				<!-- 上拉加载更多 -->
+				<loading style="height: 70px;" 
+				class="w-100 flex-row j-center a-center"
+				@loading="loadmore" 
+				:display="loadingShow">
+					<text class="font-md text-muted">{{ loadtext }}</text>
+				</loading>
+			</template>
+		</list>
+		
 	</view>
 </template>
 
 <script>
 	import uniSwipeAction from '@/components/uni-ui/uni-swipe-action/uni-swipe-action.vue'
-	import importIcon from '@/common/mixin/importIcon.js'
 	import {mapState, mapMutations} from 'vuex'
 	
 	export default {
-		mixins: [importIcon],
+		mixins: [],
 		components: {
 			uniSwipeAction
 		},
 		data() {
 			return {
 				list: [],
+				page: 1,
+				index: 0,
+				
+				refreshShow: false,
+				refreshtext: "下拉刷新",
+				loadingShow: false,
+				loadtext: "加载更多",
 				
 				options: [{
 					text: '修改',
@@ -64,30 +98,7 @@
 			})
 		},
 		onLoad: function(e) {
-			
-			// #ifdef APP-PLUS
-			const domModule = weex.requireModule('dom')
-			domModule.addRule('fontFace', {  
-			    'fontFamily': "iconfont2",  
-				// 'src': "url('https://at.alicdn.com/t/font_1494388_6p8busou8bx.ttf')"
-				'src': "url('"+"file://" + plus.io.convertLocalFileSystemURL("_www/static/iconfont.ttf") +"')"
-			});
-			// #endif
-			
-			
-			let data = []
-			for (let i = 0; i <= 50; i++) {
-				data.push({
-					id: i,
-					title: "title title title  " + i,
-					titlepic: "https://yanxuan-item.nosdn.127.net/4c536c4ea486f8d5c8a172bfaaf5b680.png",
-					desc: "天鹅绒面，丝绒时髦高级感 " + i,
-					pprice: "200.00",
-					comment_num: i + 1,
-					good_num: i + "%"
-				})
-			}
-			this.list = data
+			this.getData()
 			
 			// 获取globalData全局数据 (全端通用)
 			let appName = getApp().globalData.appName
@@ -100,6 +111,65 @@
 			console.log('page show');
 		},
 		methods: {
+			getData() {
+				let data = []
+				for (let i = this.index + 1; i <= this.index + 50; i++) {
+					data.push({
+						id: i,
+						title: "title title title  " + i,
+						titlepic: "https://yanxuan-item.nosdn.127.net/4c536c4ea486f8d5c8a172bfaaf5b680.png",
+						desc: "天鹅绒面，丝绒时髦高级感 " + i,
+						pprice: "200.00",
+						comment_num: i,
+						good_num: i + "%"
+					})
+				}
+				this.index = this.index + 50
+				this.list = [...this.list, ...data]
+				this.page = this.page + 1
+				
+				console.log('-------------');
+				console.log(this.list.length);
+			},
+			
+			loadmore: function() {
+				if (this.loadingShow) return
+				this.loadingShow = true
+				this.loadtext = "加载中..."
+				
+				this.getData()
+				
+				this.loadingShow = false
+				this.loadtext = "加载更多"
+			},
+			
+			pullingdown: function(e) {
+				// 当下拉高度超过某个值 则提示可进行刷新
+				if (e.pullingDistance > e.viewHeight) {
+					this.refreshtext = "释放就能刷新"
+				} else {
+					this.refreshtext = "下拉刷新"
+				}
+			},
+			refreshList: function() {
+				if (this.refreshShow === 'show') return
+				this.refreshShow = 'show'
+				this.refreshtext = "正在刷新中..."
+				
+				this.index = 0
+				this.page = 1
+				this.list = []
+				this.getData()
+				
+				this.refreshtext = "下拉刷新"
+				// 这里必须使用$nextTick() 才能隐藏"下拉刷新"这个提示文字
+				this.$nextTick(() => {
+					this.refreshShow = 'hide'
+				})
+			},
+			
+			
+			
 			showLogin: function() {
 				console.log(this.loginStatus);
 			},

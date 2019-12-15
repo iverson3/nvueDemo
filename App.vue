@@ -8,6 +8,17 @@
 		onLaunch: function() {
 			console.log('App Launch')
 			
+			// app平台 则使用weex dom模块引入本地(网络)ttf资源
+			// 非app平台 则在下面style里使用import方式引入本地css文件 (@import "./common/icon.css";)
+			// #ifdef APP-PLUS
+			const domModule = weex.requireModule('dom')
+			domModule.addRule('fontFace', {  
+			    'fontFamily': "iconfont2",  
+				// 'src': "url('https://at.alicdn.com/t/font_1494388_6p8busou8bx.ttf')"
+				'src': "url('"+"file://" + plus.io.convertLocalFileSystemURL("_www/static/iconfont.ttf") +"')"
+			});
+			// #endif
+			
 			uni.getSystemInfoSync({
 				success: (res) => {
 					console.log(res);
@@ -81,8 +92,6 @@
 	/* 引入nvue专用的公共UI基础库 */
 	@import "./common/zcm-main-nvue.css";
 	
-	/* 非app平台 使用下面的方式引入ttf文件 */
-	/* app平台 则在mixin-importIcon中使用weex dom模块引入网络ttf资源 */
 	/* #ifndef APP-PLUS */
 	@import "./common/icon.css";
 	/* #endif */
