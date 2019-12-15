@@ -1,9 +1,49 @@
 <template>
-	<view>
+	<view class="tabs">
+		<view class="bg-white py-1">
+			<view class="flex-row">
+				<text @click="showLogin" class="flex-1 iconfont2 text-center">&#xe64c;</text>
+				<text class="flex-1 iconfont2 text-center font-lg">&#xe615;</text>
+				<text class="flex-1 iconfont2 text-center font-sm">&#xe643;</text>
+				<text class="flex-1 iconfont2 text-center">&#xe7eb;</text>
+			</view>
+		</view>
 		
-		<list :show-scrollbar="false" class="w-100 h-100">
+		<uni-list class="listview" :enableBackToTop="true" :scroll-y="true" @scrolltolower="loadmore()">
+		    <uni-refresh class="refresh" @refresh="refreshList" @pullingdown="pullingdown" :display="refreshShow ? 'show' : 'hide'">
+		        <div class="refresh-view">
+		            <image class="refresh-icon" :src="refreshIcon" :style="{width: (refreshShow || pulling) ? 0: '32px'}"
+		                :class="{'refresh-icon-active': refreshFlag}"></image>
+		            <uni-load-more v-if="refreshShow" class="loading-icon" status="loading" :contentText="loadingMoreText"></uni-load-more>
+		            <text class="loading-text">{{refreshtext}}</text>
+		        </div>
+		    </uni-refresh>
+		    <uni-cell v-for="(item, index) in list" :key="index">
+		        <uni-swipe-action :options="options" @click="bindClick($event, item)">
+		        	<view class="p-1 flex-row border" style="height: auto;">
+		        		<image :src="item.titlepic" mode="widthFix" class="mr-1" style="flex: 2;max-height: 140upx;"></image>
+		        		<view class="a-center" style="flex: 7;align-items: flex-start;">
+		        			<text class="text-dark font-sm">{{ item.title }}</text>
+		        			<text class="iconfont2 pt text-muted" style="font-size: 30upx;">{{ item.desc }}</text>
+		        		</view>
+		        		<view class="flex-1 j-center">
+		        			<text class="iconfont2">&#xe63f;</text>
+		        		</view>
+		        	</view>
+		        </uni-swipe-action>
+		    </uni-cell>
+		    <uni-cell v-if="loadingShow || list.length > 4">
+		        <view class="loading-more">
+		            <text class="loading-more-text">{{loadtext}}</text>
+		        </view>
+		    </uni-cell>
+		</uni-list>
+		
+		
+		
+		
+		<!-- <list :show-scrollbar="false" class="w-100 h-100">
 			<template v-if="list.length > 0">
-				<!-- 下拉刷新 -->
 				<refresh style="height: 80px;" 
 				class="w-100 flex-row j-center a-center"
 				@refresh="refreshList" 
@@ -13,40 +53,7 @@
 				</refresh>
 			</template>
 			
-			<header>
-				<view class="bg-white">
-					<view class="flex-row">
-						<text @click="showLogin" class="flex-1 iconfont2 text-center">&#xe64c;</text>
-						<text class="flex-1 iconfont2 text-center font-lg">&#xe615;</text>
-						<text class="flex-1 iconfont2 text-center font-sm">&#xe643;</text>
-						<text class="flex-1 iconfont2 text-center">&#xe7eb;</text>
-					</view>
-					
-					<view class="w-100 flex-row border rounded" style="height: 50upx;">
-						<text class="text-white ml-3 bg-secondary">111111</text>
-						<text class="text-muted ml-3">22222</text>
-						<text class="text-muted ml-3">33333</text>
-					</view>
-				</view>
-			</header>
-			
-			<cell v-for="(item,index) in list" :key="index">
-				<uni-swipe-action :options="options" @click="bindClick($event, item)">
-					<view class="p-1 flex-row border" style="height: auto;">
-						<image :src="item.titlepic" mode="widthFix" class="mr-1" style="flex: 2;max-height: 140upx;"></image>
-						<view class="a-center" style="flex: 7;align-items: flex-start;">
-							<text class="text-dark font-sm">{{ item.title }}</text>
-							<text class="iconfont2 pt text-muted" style="font-size: 30upx;">{{ item.desc }}</text>
-						</view>
-						<view class="flex-1 j-center">
-							<text class="iconfont2">&#xe63f;</text>
-						</view>
-					</view>
-				</uni-swipe-action>
-			</cell>
-			
 			<template v-if="list.length > 0">
-				<!-- 上拉加载更多 -->
 				<loading style="height: 70px;" 
 				class="w-100 flex-row j-center a-center"
 				@loading="loadmore" 
@@ -54,18 +61,27 @@
 					<text class="font-md text-muted">{{ loadtext }}</text>
 				</loading>
 			</template>
-		</list>
+		</list> -->
 		
 	</view>
 </template>
 
 <script>
+	import uniList from '@/components/uni-ui/uni-list-fromnews/uni-list.vue';
+	import uniCell from '@/components/uni-ui/uni-cell.vue';
+	import uniRefresh from '@/components/uni-ui/uni-list-fromnews/uni-refresh.vue';
+	import uniLoadMore from '@/components/uni-ui/uni-load-more.vue';
 	import uniSwipeAction from '@/components/uni-ui/uni-swipe-action/uni-swipe-action.vue'
+	
 	import {mapState, mapMutations} from 'vuex'
 	
 	export default {
 		mixins: [],
 		components: {
+			uniList,
+			uniCell,
+			uniRefresh,
+			uniLoadMore,
 			uniSwipeAction
 		},
 		data() {
@@ -74,10 +90,20 @@
 				page: 1,
 				index: 0,
 				
+				pulling: false,
+				pullTimer: null,
 				refreshShow: false,
 				refreshtext: "下拉刷新",
+				refreshFlag: false,
+				refreshIcon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAB5QTFRFcHBw3Nzct7e39vb2ycnJioqK7e3tpqam29vb////D8oK7wAAAAp0Uk5T////////////ALLMLM8AAABxSURBVHja7JVBDoAgDASrjqj//7CJBi90iyYeOHTPMwmFZrHjYyyFYYUy1bwUZqtJIYVxhf1a6u0R7iUvWsCcrEtwJHp8MwMdvh2amHduiZD3rpWId9+BgPd7Cc2LIkPyqvlQvKxKBJ//Qwq/CacAAwDUv0a0YuKhzgAAAABJRU5ErkJggg==",
+				
 				loadingShow: false,
 				loadtext: "加载更多",
+				loadingMoreText: {
+					contentdown: '',
+					contentrefresh: '',
+					contentnomore: ''
+				},
 				
 				options: [{
 					text: '修改',
@@ -144,28 +170,42 @@
 			},
 			
 			pullingdown: function(e) {
+				if (this.refreshShow) return
+				
+				this.pulling = false;
 				// 当下拉高度超过某个值 则提示可进行刷新
 				if (e.pullingDistance > e.viewHeight) {
+					this.refreshFlag = true;
 					this.refreshtext = "释放就能刷新"
 				} else {
+					this.refreshFlag = false;
 					this.refreshtext = "下拉刷新"
 				}
 			},
 			refreshList: function() {
-				if (this.refreshShow === 'show') return
-				this.refreshShow = 'show'
+				if (this.refreshShow) return
+				this.refreshShow = true
 				this.refreshtext = "正在刷新中..."
+				this.pulling = true;
 				
 				this.index = 0
 				this.page = 1
 				this.list = []
 				this.getData()
 				
+				this.refreshFlag = false;
 				this.refreshtext = "下拉刷新"
 				// 这里必须使用$nextTick() 才能隐藏"下拉刷新"这个提示文字
 				this.$nextTick(() => {
-					this.refreshShow = 'hide'
+					this.refreshShow = false
 				})
+				
+				if (this.pullTimer) {
+					clearTimeout(this.pullTimer);
+				}
+				this.pullTimer = setTimeout(() => {
+					this.pulling = false;
+				}, 1000);
 			},
 			
 			
@@ -198,5 +238,68 @@
 </script>
 
 <style>
+	/* #ifndef APP-PLUS */
+	page {
+		width: 100%;
+		min-height: 100%;
+		display: flex;
+	}
+	/* #endif */
 	
+	/* 很重要，有了这个样式，页面才能不自动滚动  list上面的内容才能固定在顶部不动 否则会因为页面级的滚动而无法固定在顶部 */
+	.tabs {
+		flex: 1;
+		flex-direction: column;
+		overflow: hidden;
+		background-color: #ffffff;
+	}
+	
+	.refresh {
+		justify-content: center;
+	}
+	.refresh-view {
+		/* #ifndef APP-NVUE */
+		display: flex;
+		/* #endif */
+		width: 750rpx;
+		height: 64px;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		align-items: center;
+		justify-content: center;
+	}
+	.refresh-icon {
+		width: 32px;
+		height: 32px;
+		transition-duration: .5s;
+		transition-property: transform;
+		transform: rotate(0deg);
+		transform-origin: 15px 15px;
+	}
+	.refresh-icon-active {
+		transform: rotate(180deg);
+	}
+	
+	.loading-icon {
+		width: 28px;
+		height: 28px;
+		margin-right: 5px;
+		color: gray;
+	}
+	.loading-text {
+		margin-left: 2px;
+		font-size: 16px;
+		color: #999999;
+	}
+	.loading-more {
+		align-items: center;
+		justify-content: center;
+		padding-top: 14px;
+		padding-bottom: 14px;
+		text-align: center;
+	}
+	.loading-more-text {
+		font-size: 28upx;
+		color: #999;
+	}
 </style>

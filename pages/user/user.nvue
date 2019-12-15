@@ -1,6 +1,8 @@
 <template>
-	<view class="j-center a-center">
-		<text class="pt-5">User</text>
+	<view>
+		<view class="flex-1 j-center a-center" style="position: fixed; bottom: 100upx; left: 240upx;" @click="gotoDouyin">
+			<text class="font-md">进入抖音</text>
+		</view>
 	</view>
 </template>
 
@@ -12,11 +14,15 @@
 			}
 		},
 		methods: {
-			
+			gotoDouyin: function() {
+				uni.navigateTo({
+					url: '/pages/douyin/douyin'
+				});
+			}
 		}
 	}
 </script>
 
 <style>
-
+	
 </style>

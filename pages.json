@@ -8,6 +8,12 @@
             "path" : "pages/user/user",
             "style" : {}
         }
+        ,{
+            "path" : "pages/douyin/douyin",
+            "style" : {
+				"navigationStyle":"custom"
+			}
+        }
     ],
 	"tabBar": {
 		"color":"#B1B1B1",
