@@ -27,18 +27,18 @@
 
 /*  -- 栅格布局 -- */
 .row { flex-direction: row; flex-wrap: wrap;}
-.col-1{ width: 62.5px; } 
-.col-2{ width: 125px; } 
-.col-3{ width: 187.5px; } 
-.col-4{ width: 250px;} 
-.col-5{ width: 312.5px; } 
-.col-6{ width: 375px; }
-.col-7{ width: 437.5px; }
-.col-8{ width: 500px; }
-.col-9{ width: 562.5px; }
-.col-10{ width: 625px; }
-.col-11{ width: 687.5px; }
-.col-12{ width: 750px; }
+.col-1{ width: 62.5upx; } 
+.col-2{ width: 125upx; } 
+.col-3{ width: 187.5upx; } 
+.col-4{ width: 250upx;} 
+.col-5{ width: 312.5upx; } 
+.col-6{ width: 375upx; }
+.col-7{ width: 437.5upx; }
+.col-8{ width: 500upx; }
+.col-9{ width: 562.5upx; }
+.col-10{ width: 625upx; }
+.col-11{ width: 687.5upx; }
+.col-12{ width: 750upx; }
 
 /* flex布局 */
 .flex-1{ flex: 1; }

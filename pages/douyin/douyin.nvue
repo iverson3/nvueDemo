@@ -1,7 +1,5 @@
 <template>
 	<view class="tabs" :style="{ height: height }">
-		<!-- 自定义的透明的全屏view 用来响应在视频上的点击事件 -->
-		<view v-if="showHoverView" class="hover-view" @click="clickHoverView"></view>
 		
 		<swiper class="tab-box" ref="swiper1" :vertical="true" :current="videoIndex" :duration="300" 
 		:touchable="!disabledSwiper" :disable-touch="disabledSwiper" @change="onswiperchange" @transition="onswiperscroll"
@@ -12,8 +10,10 @@
 				@play="videoPlay" @ended="videoEnd"
 				@error="videoErrorCallback" :poster="item.poster" :page-gesture="true">
 				
+					<!-- 自定义的透明的全屏view(其实没有全屏) 用来响应在视频上的点击事件 -->
+					<view v-if="showHoverView" class="hover-view" @click="clickHoverView"></view>
 					<!-- 自定义遮罩层 -->
-					<view class="mymask" :style="{ height: maskHeight }" @click.stop="closeComment"></view>
+					<view v-if="showCommentMask" class="comment-mask" @click.stop="closeComment"></view>
 				
 					<view class="cover-info p-1">
 						<text class="info-user">@{{ item.user }}</text>
@@ -23,7 +23,7 @@
 							<text class="info-bgmusic-text">-图克 @背景音乐名字~</text>
 						</view>
 					</view>
-					<view class="cover-buttons p-1">
+					<view v-if="showButtonsBar" id="buttonsBar" class="cover-buttons p-1">
 						<image :src="item.userpic" mode="widthFix" class="userpic"></image>
 						<text class="iconfont2 btn-like" @click.stop="dolike" :style="{ color: likecolor }">&#xe630;</text>
 						<text class="btn-like-number">3.5w</text>
@@ -38,28 +38,38 @@
 						
 						<text class="iconfont2 commentPop-close-icon" @click.stop="closeComment">&#xe6f0;</text>
 						
-						<view class="comment-title j-center a-center text-center py">
-							<text class="w-100 text-center mt-1" style="color: black;">761 条评论</text>
+						<view class="comment-title j-center a-center text-center my-2 mx-5">
+							<text class="w-100 text-center" style="color: black;">{{ videoList[videoIndex].commentList.length }} 条评论</text>
 						</view>
-						<view class="comment-list w-100 pr pt">
-							<view class="comment-list-item flex-row" v-for="(i) in 10" :key="i">
+					
+						<uni-list class="listview bg-white pr pt" :enableBackToTop="true" :scroll-y="true">
+							<uni-cell v-for="(item,index) in videoList[videoIndex].commentList" :key="index">
+							
+							<view class="comment-list-item flex-row">
 								<view class="comment-list-pic-view">
-									<image src="/static/head.jpeg" class="comment-list-pic" mode="widthFix"></image>
+									<image :src="item.userpic" class="comment-list-pic" mode="widthFix"></image>
 								</view>
 								<view class="comment-list-info px-1" style="flex: 9;">
-									<text style="font-size: 32upx; color: gray; font-weight: bold;">张大嘴</text>
 									<view class="flex-row">
-										<text style="font-size: 34upx; color: #3B4144;">太喜欢了，棒棒哒！!</text>
-										<text style="font-size: 32upx; color: #6C757D; padding-left: 20upx;">12-15</text>
+										<text style="font-size: 32upx; color: gray; font-weight: bold;">{{ item.nickname }}</text>
+										<text style="font-size: 28upx; color: #B2B2B2; padding-left: 20upx;padding-top: 2upx;">{{ item.comment_time }}</text>
 									</view>
+									<text class="comment-list-content">{{ item.content }}</text>
 								</view>
-								<view class="comment-list-like flex-1">
+								<view class="comment-list-like flex-1 pt">
 									<text class="iconfont2 text-center" style="font-size: 36upx;color:#C0C0C0;">&#xe630;</text>
-									<text class="text-center">3</text>
+									<text class="text-center">{{ item.likes }}</text>
 								</view>
 							</view>
-						</view>
+							
+							</uni-cell>
+						</uni-list>
 						
+						<view class="w-100 bg-white comment-form border-top flex-row p-1" style="height: 110upx; margin-bottom: 70upx;">
+							<input type="text" v-model="commentInfo" style="width: 530upx;padding-top: 12upx;" placeholder="留下你的精彩评论吧" />
+							<text class="iconfont2 flex-1" style="color: #B2B2B2;font-size: 70upx;text-align: right;">&#xe62c;</text>
+							<text class="iconfont2 flex-1 text-center" @click.stop="submitComment" style="color: #B2B2B2;font-size: 56upx;padding-top: 8upx;">&#xe60d;</text>
+						</view>
 					</view>
 				</video>
 			</swiper-item>
@@ -68,21 +78,30 @@
 </template>
 
 <script>
+	import uniList from '@/components/uni-ui/uni-list-fromnews/uni-list.vue';
+	import uniCell from '@/components/uni-ui/uni-cell.vue';
+	
 	export default {
+		components: {
+			uniList,
+			uniCell
+		},
 		data() {
 			return {
 				videoContext: null,
 				pre_videoContext: null,
 				videoIndex: 0,
-				isPlaying: true,
-				disabledSwiper: true,  // 是否禁止swiper滑动
-				
-				showCommentPop: false,
-				wv: null,  // 当前webview对象
+				isPlaying: true,       // 视频是否正在播放中
+				disabledSwiper: true,  // 是否禁止swiper滑动 (无效)
+				showCommentPop: false, // 是否显示评论列表popup
+				showButtonsBar: true,  // 是否显示buttonsBar
+				wv: null,              // 当前webview对象
+				bgView: null,
 				showHoverView: true,
+				showCommentMask: false,
 				startClick: false,
-				maskHeight: 0,
 				
+				commentInfo: "",   // 评论表单字段
 				width: '750upx',
 				height: '667px',
 				
@@ -95,8 +114,73 @@
 						poster: "",
 						liked: false,
 						url: "http://chat.ukuhub.com/video/1576419024433045.mp4",
-						desc: "#dou是宝宝首次还原，婴儿小安！胡子小安，性感小安，给个面子记得点赞~",
-						comment: "",
+						desc: "#邓超、鹿晗、陈赫跑男家族齐聚首，一起吃夜宵好玩好玩呢，给个面子记得点赞~",
+						commentList: [
+							{
+								id: 1,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 2,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮2",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 1,
+							},
+							{
+								id: 3,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮3",
+								content: "太喜欢了，棒棒哒! 马老师动作流畅特别有范儿 帅帅帅",
+								comment_time: "12-15",
+								likes: 2,
+							},
+							{
+								id: 4,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮4",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 5,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮5",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 12,
+							},
+							{
+								id: 6,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮6",
+								content: "太喜欢了，棒棒哒6666",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 7,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮77",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 8,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮8",
+								content: "太喜欢了，棒棒哒8888888",
+								comment_time: "12-15",
+								likes: 3,
+							}
+						],
 					},
 					{
 						id: 2,
@@ -107,7 +191,32 @@
 						liked: true,
 						url: "http://chat.ukuhub.com/video/1576419024446166.mp4",
 						desc: "#dou是宝宝首次还原，婴儿小安！胡子小安，性感小安，给个面子记得点赞~",
-						comment: "",
+						commentList: [
+							{
+								id: 1,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 2,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮2",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 3,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮3",
+								content: "太喜欢了，棒棒哒333333",
+								comment_time: "12-15",
+								likes: 3,
+							}
+						],
 					},
 					{
 						id: 3,
@@ -117,8 +226,57 @@
 						poster: "",
 						liked: false,
 						url: "http://chat.ukuhub.com/video/1576419026140239.mp4",
-						desc: "#dou是宝宝首次还原，婴儿小安！胡子小安，性感小安，给个面子记得点赞~",
-						comment: "",
+						desc: "#这里是王老师的ukulele，欢迎关注我哦，记得点赞哦 么么哒~",
+						commentList: [
+							{
+								id: 1,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 2,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮2",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 3,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮3",
+								content: "太喜欢了，棒棒哒333333",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 4,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮4",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 5,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮5",
+								content: "太喜欢了，棒棒哒",
+								comment_time: "12-15",
+								likes: 3,
+							},
+							{
+								id: 6,
+								userpic: "/static/head.jpeg",
+								nickname: "张大炮6",
+								content: "太喜欢了，棒棒哒6666",
+								comment_time: "12-15",
+								likes: 3,
+							}
+						],
 					}
 				]
 			}
@@ -145,18 +303,59 @@
 				console.log('touchstart');
 				console.log(res);
 			})
+			
 			// 监听页面右划返回事件
 			this.wv.addEventListener('popGesture', (res) => {
 				console.log('popGesture');
 				console.log(res);
+				if (res.type == 'end' && res.progress == 100 && res.result) {
+					if (this.bgView) this.bgView.hide()
+				}
 			})
 			// #endif
 		},
 		onReady: function() {
+			// plus.video.getVideoPlayerById("myVideo1")
 			// this.videoContext = uni.createVideoContext('myVideo1', this)
 			this.videoContext = this.$refs['myVideo1'][0]
 			this.pre_videoContext = this.videoContext
 			this.videoContext.play()
+			
+			// 没用
+			// let oj = plus.nativeObj.View.getViewById("myVideo1")
+			// console.log(oj);
+			// 没用
+			// let ojj = plus.video.getVideoPlayerById("myVideo1")
+			// ojj.addEventListener()
+			// console.log(ojj);
+			
+			// let buttonsBar = plus.nativeObj.View.getViewById("buttonsBar")
+			// let buttonsBar = plus.webview.getWebviewById("buttonsBar")
+			// console.log('buttonsBar');
+			// console.log(buttonsBar);
+			
+			this.bgView = new plus.nativeObj.View('test',{top:'0px',left:'0px',height:'65px',width:'100%'});
+			// 绘制矩形
+			this.bgView.drawRect({color:'rgba(0,0,0,0)'}, {top:'0px',left:'0px',width:'100%',height:'100%'});
+			this.bgView.addEventListener("click", (res) => {
+				console.log(res);
+				this.closeComment()
+			})
+		},
+		onUnload: function() {
+			// 页面卸载的时候释放各种相关资源
+			this.bgView.hide()
+			this.bgView.close()
+			if (this.videoContext) {
+				this.videoContext.stop()
+			}
+			if (this.pre_videoContext) {
+				this.pre_videoContext.stop()
+			}
+			this.videoContext = null
+			this.pre_videoContext = null
+			this.wv = null
+			console.log('onUnload');
 		},
 		methods: {
 			// 当前视频改变
@@ -176,7 +375,8 @@
 				this.videoContext.play()
 				this.isPlaying = true
 				this.showCommentPop = false
-				this.maskHeight = "0upx"
+				this.showCommentMask = false
+				this.showButtonsBar = true
 			},
 			// 切换视频的过程中不断触发
 			onswiperscroll(e) {
@@ -200,24 +400,55 @@
 					// 	this.showCommentPop = false
 					// },false);
 				}
+				this.bgView.show()
+				this.showButtonsBar = false
 				this.disabledSwiper = true
 				this.showHoverView = false
-				this.maskHeight = "500upx"
+				this.showCommentMask = true
 				this.showCommentPop = true
 			},
 			doShare: function() {
-				
+				let videoInfo = this.videoList[this.videoIndex]
+				// #ifdef APP-PLUS
+				// 分享为小程序类型
+				let shareInfo = {
+					type: 'miniProgram',
+					title: videoInfo.title,
+					content: videoInfo.desc,
+					thumbs: videoInfo.poster,  // 图片小于128K，宽高比为5:4
+					miniProgram: {  // 小程序参数
+						id: 'gh_ee9e6cbf2fb9', // 微信小程序的原始ID
+						path: "/pages/detail/detail?goods_id=" + videoInfo.id, // 微信小程序打开的页面路径
+						type: 2, // 微信小程序版本类型 0-正式版； 1-测试版； 2-体验版
+						webUrl: "/pages/detail/detail?goods_id=" + videoInfo.id
+					}
+				}
+				// 分享为网页类型
+				shareInfo = {
+					type: 'web',
+					content: videoInfo.title,
+					href: "http://ukuhub.com"
+				}
+				plus.share.sendWithSystem(shareInfo, function(){
+					uni.showToast({title: '分享成功', icon: "success"});
+				}, function(e){
+					uni.showToast({title: '分享失败', icon: 'none'});
+				});
+				// #endif
 			},
 			closeComment: function() {
 				if (this.wv) {
 					// this.wv.setStyle({mask:'none'});
 				}
+				this.bgView.hide()
+				this.showButtonsBar = true
 				this.disabledSwiper = false
 				this.showHoverView = true
-				this.maskHeight = "0upx"
 				this.showCommentPop = false
+				this.showCommentMask = false
 			},
 			clickHoverView: function() {
+				console.log('hover click');
 				if (this.startClick) {
 					// 双击
 					this.startClick = false
@@ -238,15 +469,37 @@
 					}, 260)
 				}
 			},
+			submitComment: function() {
+				if (this.commentInfo == '') return uni.showToast({title: '评论不能为空', icon: 'none'});
+				this.videoList[this.videoIndex].commentList.push({
+					id: 100,
+					userpic: "/static/head.jpeg",
+					nickname: "王小贱",
+					content: this.commentInfo,
+					comment_time: "12-16",
+					likes: 0
+				})
+				this.commentInfo = ""
+				// #ifdef APP-PLUS
+				plus.key.hideSoftKeybord()
+				// #endif
+				// #ifndef APP-PLUS
+				uni.hideKeyboard()
+				// #endif
+				uni.showToast({title: '评论成功', icon: 'success'});
+			},
 			
 			videoPlay: function() {
 				this.showHoverView = true
 			},
 			videoEnd: function() {
 				this.showHoverView = false
+				this.showCommentPop = false
+				this.showCommentMask = false
+				this.showButtonsBar = true
 			},
 			videoErrorCallback: function() {
-				
+				uni.showToast({title: '视频播放出错', icon: 'none'});
 			}
 		}
 	}
@@ -276,8 +529,9 @@
 		background-color: rgba(0,0,0,0);
 		/* opacity: 1; */
 	}
-	.mymask {
+	.comment-mask {
 		width: 750upx;
+		height: 136upx;
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -327,6 +581,7 @@
 		bottom: 100upx;
 		right: 0upx;
 		z-index: 9999;
+		/* background-color: rgba(0,0,0,0); */
 	}
 	.userpic {
 		width: 110upx;
@@ -376,7 +631,7 @@
 	}
 	
 	.commentPop {
-		height: 1100upx;
+		height: 1200upx;
 		position: absolute;
 		bottom: 0;
 		left: 0;
@@ -384,15 +639,24 @@
 		z-index: 9999;
 		border-top-left-radius: 20upx;
 		border-top-right-radius: 20upx;
+		/* padding-bottom: 100upx; */
+		/* padding-bottom: 40upx; */
 	}
 	.commentPop-close-icon {
 		position: absolute;
-		top: 20upx;
-		right: 20upx;
+		top: 26upx;
+		right: 26upx;
 		color: gray;
 	}
 	
+	.listview {
+		/* width: 750upx;
+		height: 500upx; */
+		margin-bottom: 20upx;
+	}
 	.comment-list-item {
+		/* margin-top: 30upx; */
+		/* margin-bottom: 30upx; */
 		padding-top: 30upx;
 		padding-bottom: 30upx;
 	}
@@ -405,6 +669,12 @@
 		width: 80upx;
 		height: 80upx;
 		border-radius: 40upx;
+	}
+	.comment-list-content {
+		font-size: 34upx; 
+		color: #3B4144;
+		flex-wrap: wrap;
+		margin-top: 16upx;
 	}
 	
 </style>
