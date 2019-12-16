@@ -2,18 +2,13 @@
 	<view class="tabs" :style="{ height: height }">
 		
 		<swiper class="tab-box" ref="swiper1" :vertical="true" :current="videoIndex" :duration="300" 
-		:touchable="!disabledSwiper" :disable-touch="disabledSwiper" @change="onswiperchange" @transition="onswiperscroll"
+		 @change="onswiperchange" @transition="onswiperscroll"
 		 @animationfinish="animationfinish">
 			<swiper-item class="swiper-item" v-for="(item, index) in videoList" :key="index">
 				<video :id="'myVideo'+(index+1)" :ref="'myVideo'+(index+1)" class="w-100"
 				:src="item.url" :style="{ height: height }" :controls="false"
-				@play="videoPlay" @ended="videoEnd"
+				@play="videoPlay" @ended="videoEnd" @click="clickVideo" @timeupdate="vidoeTimeUpdate"
 				@error="videoErrorCallback" :poster="item.poster" :page-gesture="true">
-				
-					<!-- 自定义的透明的全屏view(其实没有全屏) 用来响应在视频上的点击事件 -->
-					<view v-if="showHoverView" class="hover-view" @click="clickHoverView"></view>
-					<!-- 自定义遮罩层 -->
-					<view v-if="showCommentMask" class="comment-mask" @click.stop="closeComment"></view>
 				
 					<view class="cover-info p-1">
 						<text class="info-user">@{{ item.user }}</text>
@@ -23,8 +18,8 @@
 							<text class="info-bgmusic-text">-图克 @背景音乐名字~</text>
 						</view>
 					</view>
-					<view v-if="showButtonsBar" id="buttonsBar" class="cover-buttons p-1">
-						<image :src="item.userpic" mode="widthFix" class="userpic"></image>
+					<view id="buttonsBar" class="cover-buttons p-1">
+						<image :src="item.userpic" @click.stop="toUserPage" mode="widthFix" class="userpic"></image>
 						<text class="iconfont2 btn-like" @click.stop="dolike" :style="{ color: likecolor }">&#xe630;</text>
 						<text class="btn-like-number">3.5w</text>
 						<text class="iconfont2 btn-comment" @click.stop="showComment">&#xe67a;</text>
@@ -32,14 +27,15 @@
 						<text class="iconfont2 btn-share" @click.stop="doShare">&#xe655;</text>
 						<text class="btn-share-number">116</text>
 					</view>
+					<!-- 进度条 -->
+					<view class="cover-progressbar" :style="{ width: progressBarWidth }"></view>
 					
 					<!-- 评论列表popup -->
-					<view v-if="showCommentPop" class="w-100 bg-white commentPop" @touchstart.stop="()=>{}" @tap.stop="()=>{}">
+					<view v-if="showCommentPop" class="w-100 bg-white commentPop" @longtap.stop="commentlongtap" @click.stop="commentViewClick" @touchstart.stop="commentTouchStart" @touchmove.stop="commentTouchMove" @touchend.stop="commentTouchEnd">
 						
-						<text class="iconfont2 commentPop-close-icon" @click.stop="closeComment">&#xe6f0;</text>
-						
-						<view class="comment-title j-center a-center text-center my-2 mx-5">
-							<text class="w-100 text-center" style="color: black;">{{ videoList[videoIndex].commentList.length }} 条评论</text>
+						<view class="comment-title flex-row my-2">
+							<text class="text-center" style="color: black;width: 590upx;margin-left: 80upx;">{{ videoList[videoIndex].commentList.length }} 条评论</text>
+							<text class="iconfont2 commentPop-close-icon" style="width: 80upx;" @click.stop="closeComment">&#xe6f0;</text>
 						</view>
 					
 						<uni-list class="listview bg-white pr pt" :enableBackToTop="true" :scroll-y="true">
@@ -92,18 +88,18 @@
 				pre_videoContext: null,
 				videoIndex: 0,
 				isPlaying: true,       // 视频是否正在播放中
-				disabledSwiper: true,  // 是否禁止swiper滑动 (无效)
+				// disabledSwiper: true,  // 是否禁止swiper滑动 (无效)
 				showCommentPop: false, // 是否显示评论列表popup
-				showButtonsBar: true,  // 是否显示buttonsBar
 				wv: null,              // 当前webview对象
-				bgView: null,
-				showHoverView: true,
-				showCommentMask: false,
-				startClick: false,
+				startClick: false,     // 判断双击事件的标志字段
+				stopVideoClick: false, // 是否阻止点击事件穿透到video上
 				
-				commentInfo: "",   // 评论表单字段
+				commentInfo: "",       // 评论表单字段
 				width: '750upx',
 				height: '667px',
+				
+				videoDuration: 0, // 视频的时长
+				videoPlayTime: 0, // 视频已经播放的时间
 				
 				videoList: [
 					{
@@ -285,6 +281,13 @@
 			likecolor() {
 				let color = this.videoList[this.videoIndex].liked ? '#DC3545' : 'white'
 				return color
+			},
+			// 进度条的宽度
+			progressBarWidth() {
+				if (this.videoDuration === 0) return '0upx'
+				// let width = this.videoPlayTime / this.videoDuration * parseInt(this.width)
+				let width = (this.videoPlayTime / this.videoDuration) * 750
+				return `${width}upx`
 			}
 		},
 		created: function(){
@@ -298,18 +301,12 @@
 			
 			// #ifdef APP-PLUS
 			this.wv = plus.webview.currentWebview();
-			// 监听页面触屏事件
-			this.wv.addEventListener('touchstart', (res) => {
-				console.log('touchstart');
-				console.log(res);
-			})
-			
 			// 监听页面右划返回事件
 			this.wv.addEventListener('popGesture', (res) => {
 				console.log('popGesture');
 				console.log(res);
 				if (res.type == 'end' && res.progress == 100 && res.result) {
-					if (this.bgView) this.bgView.hide()
+					console.log('back success');
 				}
 			})
 			// #endif
@@ -334,18 +331,16 @@
 			// console.log('buttonsBar');
 			// console.log(buttonsBar);
 			
-			this.bgView = new plus.nativeObj.View('test',{top:'0px',left:'0px',height:'65px',width:'100%'});
-			// 绘制矩形
-			this.bgView.drawRect({color:'rgba(0,0,0,0)'}, {top:'0px',left:'0px',width:'100%',height:'100%'});
-			this.bgView.addEventListener("click", (res) => {
-				console.log(res);
-				this.closeComment()
-			})
+			// this.bgView = new plus.nativeObj.View('test',{top:'0px',left:'0px',height:'65px',width:'100%'});
+			// // 绘制矩形
+			// this.bgView.drawRect({color:'rgba(0,0,0,0)'}, {top:'0px',left:'0px',width:'100%',height:'100%'});
+			// this.bgView.addEventListener("click", (res) => {
+			// 	console.log(res);
+			// 	this.closeComment()
+			// })
 		},
 		onUnload: function() {
 			// 页面卸载的时候释放各种相关资源
-			this.bgView.hide()
-			this.bgView.close()
 			if (this.videoContext) {
 				this.videoContext.stop()
 			}
@@ -375,8 +370,6 @@
 				this.videoContext.play()
 				this.isPlaying = true
 				this.showCommentPop = false
-				this.showCommentMask = false
-				this.showButtonsBar = true
 			},
 			// 切换视频的过程中不断触发
 			onswiperscroll(e) {
@@ -387,10 +380,72 @@
 				// console.log(e);
 			},
 			
+			// 阻止点击事件穿透到video上
+			preventClickToVideo: function() {
+				this.stopVideoClick = true
+				setTimeout(() => {
+					this.stopVideoClick = false
+				}, 300)
+			},
+			// video被点击
+			clickVideo: function() {
+				if (this.stopVideoClick) return
+				if (this.showCommentPop) return this.closeComment()
+				
+				if (this.startClick) {
+					// 双击
+					console.log('double click');
+					this.startClick = false
+					this.videoList[this.videoIndex].liked = !this.videoList[this.videoIndex].liked
+				} else {
+					this.startClick = true
+					setTimeout(() => {
+						if (this.startClick) {
+							// 单击
+							console.log('single click');
+							this.startClick = false
+							if (this.isPlaying) {
+								this.videoContext.pause()
+							} else {
+								this.videoContext.play()
+							}
+							this.isPlaying = !this.isPlaying
+						}
+					}, 260)
+				}
+			},
+			vidoeTimeUpdate: function(event) {
+				this.videoDuration = event.detail.duration
+				if(this.videoPlayTime >= event.detail.duration) this.videoPlayTime = 0
+				this.videoPlayTime = event.detail.currentTime
+			},
+			// 整个评论面板被点击(防止点击事件穿透到video上)
+			commentViewClick: function() {
+				this.preventClickToVideo()
+			},
+			commentTouchStart: function() {
+				// this.preventClickToVideo()
+			},
+			commentTouchMove: function() {
+				// this.preventClickToVideo()
+			},
+			commentTouchEnd: function() {
+				// this.preventClickToVideo()
+			},
+			commentlongtap: function() {
+				// this.preventClickToVideo()
+			},
+			toUserPage: function() {
+				this.preventClickToVideo()
+				console.log('to user page');
+				
+			},
 			dolike: function() {
+				this.preventClickToVideo()
 				this.videoList[this.videoIndex].liked = !this.videoList[this.videoIndex].liked
 			},
 			showComment: function() {
+				this.preventClickToVideo()
 				if (this.wv) {
 					// 显示遮罩层
 					// this.wv.setStyle({mask: 'rgba(0,0,0,0.2)'});
@@ -400,14 +455,10 @@
 					// 	this.showCommentPop = false
 					// },false);
 				}
-				this.bgView.show()
-				this.showButtonsBar = false
-				this.disabledSwiper = true
-				this.showHoverView = false
-				this.showCommentMask = true
 				this.showCommentPop = true
 			},
 			doShare: function() {
+				this.preventClickToVideo()
 				let videoInfo = this.videoList[this.videoIndex]
 				// #ifdef APP-PLUS
 				// 分享为小程序类型
@@ -437,39 +488,15 @@
 				// #endif
 			},
 			closeComment: function() {
+				console.log('close comment');
+				this.preventClickToVideo()
 				if (this.wv) {
 					// this.wv.setStyle({mask:'none'});
 				}
-				this.bgView.hide()
-				this.showButtonsBar = true
-				this.disabledSwiper = false
-				this.showHoverView = true
 				this.showCommentPop = false
-				this.showCommentMask = false
-			},
-			clickHoverView: function() {
-				console.log('hover click');
-				if (this.startClick) {
-					// 双击
-					this.startClick = false
-					this.videoList[this.videoIndex].liked = !this.videoList[this.videoIndex].liked
-				} else {
-					this.startClick = true
-					setTimeout(() => {
-						if (this.startClick) {
-							// 单击
-							this.startClick = false
-							if (this.isPlaying) {
-								this.videoContext.pause()
-							} else {
-								this.videoContext.play()
-							}
-							this.isPlaying = !this.isPlaying
-						}
-					}, 260)
-				}
 			},
 			submitComment: function() {
+				this.preventClickToVideo()
 				if (this.commentInfo == '') return uni.showToast({title: '评论不能为空', icon: 'none'});
 				this.videoList[this.videoIndex].commentList.push({
 					id: 100,
@@ -490,13 +517,11 @@
 			},
 			
 			videoPlay: function() {
-				this.showHoverView = true
+				this.videoPlayTime = 0
 			},
 			videoEnd: function() {
-				this.showHoverView = false
 				this.showCommentPop = false
-				this.showCommentMask = false
-				this.showButtonsBar = true
+				this.videoPlayTime = this.videoDuration
 			},
 			videoErrorCallback: function() {
 				uni.showToast({title: '视频播放出错', icon: 'none'});
@@ -519,23 +544,6 @@
 		flex-direction: column;
 		overflow: hidden;
 		background-color: #ffffff;
-	}
-	.hover-view {
-		width: 610upx;
-		height: 900upx;
-		position: fixed;
-		top: 0;
-		left: 0;
-		background-color: rgba(0,0,0,0);
-		/* opacity: 1; */
-	}
-	.comment-mask {
-		width: 750upx;
-		height: 136upx;
-		position: absolute;
-		top: 0;
-		left: 0;
-		background-color: rgba(0,0,0,0.6);
 	}
 	.tab-box {
 		flex: 1;
@@ -630,6 +638,30 @@
 		font-size: 26upx;
 	}
 	
+	.cover-progressbar {
+		border-radius: 2upx;
+		height: 4upx;
+		background-color: #fff;
+		z-index: 999999;
+		position: absolute;
+		bottom: 63upx;
+		//#ifndef APP-PLUS-NVUE
+		animation: flicker 4s linear infinite;
+		animation-direction:alternate;
+		//#endif
+	}
+	//#ifndef APP-PLUS-NVUE
+	@keyframes flicker {
+		0% { box-shadow:0 0 0 #FFFFFF; }
+	     /** 暂停效果 */
+		10% { box-shadow:0 0 2upx #FFFFFF; }
+	    50% { box-shadow:0 0 10upx #FFFFFF; }
+	    60% { box-shadow:0 0 12upx #FFFFFF; }
+	    90% { box-shadow:0 0 18upx #FFFFFF; }
+	    100% { box-shadow:0 0 20upx #FFFFFF; }
+	}
+	//#endif
+	
 	.commentPop {
 		height: 1200upx;
 		position: absolute;
@@ -643,9 +675,6 @@
 		/* padding-bottom: 40upx; */
 	}
 	.commentPop-close-icon {
-		position: absolute;
-		top: 26upx;
-		right: 26upx;
 		color: gray;
 	}
 	
