@@ -3,7 +3,23 @@
 		{
 		    "path" : "pages/douyin/douyin",
 		    "style" : {
-				"navigationStyle":"custom"
+				"navigationStyle":"custom",
+				"app-plus": {
+					"subNVues": [{
+						"id": "subcommentpanel",
+						"path": "pages/douyin/subnvue/comment-panel",
+						// "type":"popup",
+						"style": {
+							"position": "absolute",  
+							"dock": "bottom",  
+							"width": "750upx",  
+							"height": "1120upx",  
+							"background": "transparent",
+							"bottom":"0px",
+							"left":"0px"
+						}
+					}]
+				}
 			}
 		}
 		,{

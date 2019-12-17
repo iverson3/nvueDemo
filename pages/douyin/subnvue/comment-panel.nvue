@@ -1,0 +1,117 @@
+<template>
+	<div class="comment-panel">
+		<view class="comment-title flex-row my-2">
+			<text class="text-center" style="color: black;width: 590upx;margin-left: 80upx;">{{ commentList.length }} 条评论</text>
+			<text class="iconfont2 commentPop-close-icon" style="width: 80upx;" @click.stop="closeComment">&#xe6f0;</text>
+		</view>
+							
+		<uni-list class="listview bg-white pr pt" :enableBackToTop="true" :scroll-y="true">
+			<uni-cell v-for="(item,index) in commentList" :key="index">
+			
+			<view class="comment-list-item flex-row">
+				<view class="comment-list-pic-view">
+					<image :src="item.userpic" class="comment-list-pic" mode="widthFix"></image>
+				</view>
+				<view class="comment-list-info px-1" style="flex: 9;">
+					<view class="flex-row">
+						<text style="font-size: 32upx; color: gray; font-weight: bold;">{{ item.nickname }}</text>
+						<text style="font-size: 28upx; color: #B2B2B2; padding-left: 20upx;padding-top: 2upx;">{{ item.comment_time }}</text>
+					</view>
+					<text class="comment-list-content">{{ item.content }}</text>
+				</view>
+				<view class="comment-list-like flex-1 pt">
+					<text class="iconfont2 text-center" style="font-size: 36upx;color:#C0C0C0;">&#xe630;</text>
+					<text class="text-center">{{ item.likes }}</text>
+				</view>
+			</view>
+			
+			</uni-cell>
+		</uni-list>
+		
+		<view class="w-100 bg-white comment-form border-top flex-row p-1" style="height: 110upx; margin-bottom: 0upx;">
+			<input type="text" v-model="commentInfo" style="width: 530upx;padding-top: 12upx;" placeholder="留下你的精彩评论吧" />
+			<text class="iconfont2 flex-1" style="color: #B2B2B2;font-size: 70upx;text-align: right;">&#xe62c;</text>
+			<text class="iconfont2 flex-1 text-center" @click.stop="submitComment" style="color: #B2B2B2;font-size: 56upx;padding-top: 6upx;">&#xe60d;</text>
+		</view>
+	</div>
+</template>
+
+<script>
+	import uniList from '@/components/uni-ui/uni-list-fromnews/uni-list.vue';
+	import uniCell from '@/components/uni-ui/uni-cell.vue';
+	
+	export default {
+		components: {
+			uniList,
+			uniCell
+		},
+		data() {
+			return {
+				commentList: [],
+				commentInfo: "",
+			}
+		},
+		created: function() {
+			uni.$on('setCommentList', (data) => {
+				this.commentList = data.list
+			})
+			uni.$on('commitSuccess', () => {
+				this.commentInfo = ""
+			})
+		},
+		beforeDestroy: function() {
+			uni.$off('setCommentList')
+			uni.$off('commitSuccess')
+		},
+		methods: {
+			closeComment: function() {
+				uni.$emit('closeCommentFromSub')
+			},
+			submitComment: function() {
+				uni.$emit('submitCommentFromSub', this.commentInfo)
+			}
+		},
+	}
+</script>
+
+<style>
+	.comment-panel {
+		width: 750upx; 
+		height: 1120upx;
+		background-color: white;
+		border-top-left-radius: 20upx;
+		border-top-right-radius: 20upx;
+	}
+	
+	.commentPop-close-icon {
+		color: gray;
+	}
+	
+	.listview {
+		/* width: 750upx;
+		height: 500upx; */
+		margin-bottom: 20upx;
+	}
+	.comment-list-item {
+		/* margin-top: 30upx; */
+		/* margin-bottom: 30upx; */
+		padding-top: 30upx;
+		padding-bottom: 30upx;
+	}
+	.comment-list-pic-view {
+		flex: 2;
+		flex-direction: row;
+		justify-content: flex-end;
+	}
+	.comment-list-pic {
+		width: 80upx;
+		height: 80upx;
+		border-radius: 40upx;
+	}
+	.comment-list-content {
+		font-size: 34upx; 
+		color: #3B4144;
+		flex-wrap: wrap;
+		margin-top: 16upx;
+	}
+</style>
