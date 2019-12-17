@@ -14,8 +14,8 @@
 						<text class="iconfont2 text-white font">&#xe6e3;</text>
 					</view>
 					<view class="toptab flex-row">
-						<text class="pb text-white curtopbar">推荐</text>
-						<text class="pb ml-1" style="color: #B2B2B2;">关注</text>
+						<text class="pb text-white curtopbar font-weight">推荐</text>
+						<text class="pb ml-2 font-weight" style="color: #C0C0C0;">关注</text>
 					</view>
 				
 					<view v-if="showPlayIcon" class="centerPlayView" @click.stop="iconPlayVideo">
@@ -27,8 +27,8 @@
 							<text class="info-user" @click="toUserPage">@{{ item.user }}</text>
 						</view>
 						<text class="info-desc">{{ item.desc }}</text>
-						<view class="info-bgmusic">
-							<text class="iconfont2 info-bgmusic-icon">&#xe64d;</text>
+						<view class="info-bgmusic flex-row">
+							<image src="/static/bgm.png" class="info-bgmusic-icon" mode=""></image>
 							<text class="info-bgmusic-text">-图克 @背景音乐名字~</text>
 						</view>
 					</view>
@@ -615,16 +615,16 @@
 	.topsearch {
 		width: 60upx;
 		position: absolute;
-		top: 100upx; 
-		left: 70upx;
+		top: 80upx; 
+		left: 60upx;
 		z-index: 9999;
 	}
 	.toptab {
 		width: 160upx;
 		position: absolute;
-		/* top: 150upx; */
-		top: 100upx; 
-		left: 300upx;
+		/* top: 120upx; */
+		top: 80upx; 
+		left: 280upx;
 		z-index: 9999;
 	}
 	.curtopbar {
@@ -664,12 +664,12 @@
 	}
 	.info-bgmusic {
 		margin-top: 40upx;
-		flex-direction: row;
 	}
 	.info-bgmusic-icon {
-		color: white;
-		font-size: 34upx;
-		padding-top: 4upx;
+		width: 32upx;
+		height: 32upx;
+		margin-top: 4upx;
+		margin-right: 4upx;
 	}
 	.info-bgmusic-text {
 		color: white;
