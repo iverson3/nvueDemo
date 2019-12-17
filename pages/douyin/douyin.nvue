@@ -6,12 +6,26 @@
 		 @animationfinish="animationfinish">
 			<swiper-item class="swiper-item" v-for="(item, index) in videoList" :key="index">
 				<video :id="'myVideo'+(index+1)" :ref="'myVideo'+(index+1)" class="w-100"
-				:src="item.url" :style="{ height: height }" :controls="false"
+				:src="item.url" :style="{ height: height }" :controls="false" :loop="true" :auto-play="true"
 				@play="videoPlay" @ended="videoEnd" @click="clickVideo" @timeupdate="vidoeTimeUpdate"
 				@error="videoErrorCallback" :poster="item.poster" :page-gesture="true">
 				
+					<view class="topsearch">
+						<text class="iconfont2 text-white font">&#xe6e3;</text>
+					</view>
+					<view class="toptab flex-row">
+						<text class="pb text-white curtopbar">推荐</text>
+						<text class="pb ml-1" style="color: #B2B2B2;">关注</text>
+					</view>
+				
+					<view v-if="showPlayIcon" class="centerPlayView" @click.stop="iconPlayVideo">
+						<image class="centerPlayIcon" src="/static/centerplay.png" mode="widthFix"></image>
+					</view>
+					
 					<view class="cover-info p-1">
-						<text class="info-user">@{{ item.user }}</text>
+						<view class="flex-row">
+							<text class="info-user" @click="toUserPage">@{{ item.user }}</text>
+						</view>
 						<text class="info-desc">{{ item.desc }}</text>
 						<view class="info-bgmusic">
 							<text class="iconfont2 info-bgmusic-icon">&#xe64d;</text>
@@ -20,11 +34,11 @@
 					</view>
 					<view id="buttonsBar" class="cover-buttons p-1">
 						<image :src="item.userpic" @click.stop="toUserPage" mode="widthFix" class="userpic"></image>
-						<text class="iconfont2 btn-like" @click.stop="dolike" :style="{ color: likecolor }">&#xe630;</text>
+						<image :src="likepic" @click.stop="dolike" class="btn-like" mode="widthFix"></image>
 						<text class="btn-like-number">3.5w</text>
-						<text class="iconfont2 btn-comment" @click.stop="showComment">&#xe67a;</text>
+						<image src="/static/message.png" @click.stop="showComment" class="btn-comment" mode="widthFix"></image>
 						<text class="btn-comment-number">1750</text>
-						<text class="iconfont2 btn-share" @click.stop="doShare">&#xe655;</text>
+						<image src="/static/share.png" @click.stop="doShare" class="btn-share" mode="widthFix"></image>
 						<text class="btn-share-number">116</text>
 					</view>
 					<!-- 进度条 -->
@@ -61,7 +75,7 @@
 							</uni-cell>
 						</uni-list>
 						
-						<view class="w-100 bg-white comment-form border-top flex-row p-1" style="height: 110upx; margin-bottom: 70upx;">
+						<view class="w-100 bg-white comment-form border-top flex-row p-1" style="height: 110upx; margin-bottom: 0upx;">
 							<input type="text" v-model="commentInfo" style="width: 530upx;padding-top: 12upx;" placeholder="留下你的精彩评论吧" />
 							<text class="iconfont2 flex-1" style="color: #B2B2B2;font-size: 70upx;text-align: right;">&#xe62c;</text>
 							<text class="iconfont2 flex-1 text-center" @click.stop="submitComment" style="color: #B2B2B2;font-size: 56upx;padding-top: 8upx;">&#xe60d;</text>
@@ -93,13 +107,12 @@
 				wv: null,              // 当前webview对象
 				startClick: false,     // 判断双击事件的标志字段
 				stopVideoClick: false, // 是否阻止点击事件穿透到video上
-				
+				showPlayIcon: false,   // 是否显示视频中央的播放按钮
+				videoDuration: 0,      // 视频的时长
+				videoPlayTime: 0,      // 视频已经播放的时间
 				commentInfo: "",       // 评论表单字段
 				width: '750upx',
 				height: '667px',
-				
-				videoDuration: 0, // 视频的时长
-				videoPlayTime: 0, // 视频已经播放的时间
 				
 				videoList: [
 					{
@@ -109,7 +122,7 @@
 						title: "1111",
 						poster: "",
 						liked: false,
-						url: "http://chat.ukuhub.com/video/1576419024433045.mp4",
+						url: "http://chat.ukuhub.com/video/d1.mp4",
 						desc: "#邓超、鹿晗、陈赫跑男家族齐聚首，一起吃夜宵好玩好玩呢，给个面子记得点赞~",
 						commentList: [
 							{
@@ -185,7 +198,7 @@
 						title: "22222",
 						poster: "",
 						liked: true,
-						url: "http://chat.ukuhub.com/video/1576419024446166.mp4",
+						url: "http://chat.ukuhub.com/video/d2.mp4",
 						desc: "#dou是宝宝首次还原，婴儿小安！胡子小安，性感小安，给个面子记得点赞~",
 						commentList: [
 							{
@@ -221,7 +234,7 @@
 						title: "333333",
 						poster: "",
 						liked: false,
-						url: "http://chat.ukuhub.com/video/1576419026140239.mp4",
+						url: "http://chat.ukuhub.com/video/d3.mp4",
 						desc: "#这里是王老师的ukulele，欢迎关注我哦，记得点赞哦 么么哒~",
 						commentList: [
 							{
@@ -278,9 +291,9 @@
 			}
 		},
 		computed: {
-			likecolor() {
-				let color = this.videoList[this.videoIndex].liked ? '#DC3545' : 'white'
-				return color
+			likepic() {
+				let pic = this.videoList[this.videoIndex].liked ? '/static/liked.png' : '/static/nolike.png'
+				return pic
 			},
 			// 进度条的宽度
 			progressBarWidth() {
@@ -299,6 +312,18 @@
 			let width = uni.getSystemInfoSync().windowWidth 
 			this.width = `${width}px` 
 			
+			let randArr = []
+			let rand = 0
+			this.videoList.forEach((item) => {
+				while (true){
+					rand = Math.floor(Math.random() * 11) + 1;  // 含最大值，含最小值 
+					if (randArr.indexOf(rand) === -1) break
+				}
+				randArr.push(rand)
+				let url = "http://chat.ukuhub.com/video/d"+ rand +".mp4"
+				item.url = url
+			})
+			
 			// #ifdef APP-PLUS
 			this.wv = plus.webview.currentWebview();
 			// 监听页面右划返回事件
@@ -310,6 +335,20 @@
 				}
 			})
 			// #endif
+		},
+		onShow: function() {
+			if (!this.isPlaying && this.videoContext) {
+				this.videoContext.play()
+				this.isPlaying = true
+				this.showPlayIcon = false
+			}
+		},
+		onHide: function() {
+			if (this.isPlaying && this.videoContext) {
+				this.videoContext.pause()
+				this.isPlaying = false
+				this.showPlayIcon = true
+			}
 		},
 		onReady: function() {
 			// plus.video.getVideoPlayerById("myVideo1")
@@ -387,7 +426,7 @@
 					this.stopVideoClick = false
 				}, 300)
 			},
-			// video被点击
+			// video被点击 (自己实现对单击双击的判断)
 			clickVideo: function() {
 				if (this.stopVideoClick) return
 				if (this.showCommentPop) return this.closeComment()
@@ -396,7 +435,7 @@
 					// 双击
 					console.log('double click');
 					this.startClick = false
-					this.videoList[this.videoIndex].liked = !this.videoList[this.videoIndex].liked
+					this.videoList[this.videoIndex].liked = true
 				} else {
 					this.startClick = true
 					setTimeout(() => {
@@ -406,18 +445,22 @@
 							this.startClick = false
 							if (this.isPlaying) {
 								this.videoContext.pause()
+								this.showPlayIcon = true
 							} else {
 								this.videoContext.play()
+								this.showPlayIcon = false
 							}
 							this.isPlaying = !this.isPlaying
 						}
 					}, 260)
 				}
 			},
-			vidoeTimeUpdate: function(event) {
-				this.videoDuration = event.detail.duration
-				if(this.videoPlayTime >= event.detail.duration) this.videoPlayTime = 0
-				this.videoPlayTime = event.detail.currentTime
+			// 点击视频中央的播放按钮继续播放视频
+			iconPlayVideo: function() {
+				// this.preventClickToVideo()
+				// this.isPlaying = true
+				// this.showPlayIcon = false
+				// this.videoContext.play()
 			},
 			// 整个评论面板被点击(防止点击事件穿透到video上)
 			commentViewClick: function() {
@@ -435,15 +478,16 @@
 			commentlongtap: function() {
 				// this.preventClickToVideo()
 			},
+			
 			toUserPage: function() {
 				this.preventClickToVideo()
-				console.log('to user page');
-				
+				uni.switchTab({url: '/pages/user/user'})
 			},
 			dolike: function() {
 				this.preventClickToVideo()
 				this.videoList[this.videoIndex].liked = !this.videoList[this.videoIndex].liked
 			},
+			// 显示评论列表面板
 			showComment: function() {
 				this.preventClickToVideo()
 				if (this.wv) {
@@ -456,6 +500,37 @@
 					// },false);
 				}
 				this.showCommentPop = true
+				// 显示评论面板的同时隐藏tabbar
+				uni.hideTabBar({animation: false})
+			},
+			closeComment: function() {
+				console.log('close comment');
+				this.preventClickToVideo()
+				if (this.wv) {
+					// this.wv.setStyle({mask:'none'});
+				}
+				uni.showTabBar({animation: false})
+				this.showCommentPop = false
+			},
+			submitComment: function() {
+				this.preventClickToVideo()
+				if (this.commentInfo == '') return uni.showToast({title: '评论不能为空', icon: 'none'});
+				this.videoList[this.videoIndex].commentList.push({
+					id: 100,
+					userpic: "/static/head.jpeg",
+					nickname: "王小贱",
+					content: this.commentInfo,
+					comment_time: "12-16",
+					likes: 0
+				})
+				this.commentInfo = ""
+				// #ifdef APP-PLUS
+				plus.key.hideSoftKeybord()
+				// #endif
+				// #ifndef APP-PLUS
+				uni.hideKeyboard()
+				// #endif
+				uni.showToast({title: '评论成功', icon: 'success'});
 			},
 			doShare: function() {
 				this.preventClickToVideo()
@@ -483,44 +558,28 @@
 				plus.share.sendWithSystem(shareInfo, function(){
 					uni.showToast({title: '分享成功', icon: "success"});
 				}, function(e){
-					uni.showToast({title: '分享失败', icon: 'none'});
+					uni.showToast({title: '取消分享', icon: 'none'});
 				});
 				// #endif
 			},
-			closeComment: function() {
-				console.log('close comment');
-				this.preventClickToVideo()
-				if (this.wv) {
-					// this.wv.setStyle({mask:'none'});
-				}
-				this.showCommentPop = false
-			},
-			submitComment: function() {
-				this.preventClickToVideo()
-				if (this.commentInfo == '') return uni.showToast({title: '评论不能为空', icon: 'none'});
-				this.videoList[this.videoIndex].commentList.push({
-					id: 100,
-					userpic: "/static/head.jpeg",
-					nickname: "王小贱",
-					content: this.commentInfo,
-					comment_time: "12-16",
-					likes: 0
-				})
-				this.commentInfo = ""
-				// #ifdef APP-PLUS
-				plus.key.hideSoftKeybord()
-				// #endif
-				// #ifndef APP-PLUS
-				uni.hideKeyboard()
-				// #endif
-				uni.showToast({title: '评论成功', icon: 'success'});
-			},
 			
+			// 以下都是video的系统事件
+			// 视频播放时长更新
+			vidoeTimeUpdate: function(event) {
+				this.showPlayIcon = false
+				// 视频的总时长
+				this.videoDuration = event.detail.duration
+				if(this.videoPlayTime >= event.detail.duration) this.videoPlayTime = 0
+				// 视频当前已播放的时长
+				this.videoPlayTime = event.detail.currentTime
+			},
 			videoPlay: function() {
+				this.isPlaying = true
+				this.showPlayIcon = false
 				this.videoPlayTime = 0
 			},
 			videoEnd: function() {
-				this.showCommentPop = false
+				this.isPlaying = false
 				this.videoPlayTime = this.videoDuration
 			},
 			videoErrorCallback: function() {
@@ -553,9 +612,42 @@
 		flex-direction: column;
 	}
 	
+	.topsearch {
+		width: 60upx;
+		position: absolute;
+		top: 100upx; 
+		left: 70upx;
+		z-index: 9999;
+	}
+	.toptab {
+		width: 160upx;
+		position: absolute;
+		/* top: 150upx; */
+		top: 100upx; 
+		left: 300upx;
+		z-index: 9999;
+	}
+	.curtopbar {
+		border-bottom-width: 4upx;
+		border-bottom-color: #FFFFFF;
+	}
+	/* 视频中央的播放图标 */
+	.centerPlayView {
+		width: 80upx;
+		height: 80upx;
+		position: absolute;
+		/* top: 650upx; */
+		top: 560upx; 
+		left: 340upx;
+		z-index: 9999;
+	}
+	.centerPlayIcon{
+		width: 100upx;
+		height: 100upx;
+	}
 	.cover-info {
 		position: absolute; 
-		bottom: 120upx; 
+		bottom: 100upx; 
 		left: 12upx;
 		z-index: 9999;
 	}
@@ -586,7 +678,7 @@
 	
 	.cover-buttons {
 		position: absolute;
-		bottom: 100upx;
+		bottom: 300upx;
 		right: 0upx;
 		z-index: 9999;
 		/* background-color: rgba(0,0,0,0); */
@@ -595,13 +687,12 @@
 		width: 110upx;
 		height: 110upx;
 		border-radius: 55upx;
-		margin-bottom: 60upx;
+		margin-bottom: 75upx;
 	}
 	.btn-like {
 		width: 100upx;
-		height: 100upx;
-		margin-bottom: 0upx;
-		font-size: 110upx;
+		height: 86upx;
+		margin-bottom: 4upx;
 	}
 	.btn-like-number {
 		color: white;
@@ -610,12 +701,9 @@
 		font-size: 26upx;
 	}
 	.btn-comment {
-		color: white;
 		width: 100upx;
 		height: 100upx;
-		margin-bottom: -20upx;
-		font-size: 70upx;
-		text-align: center;
+		margin-bottom: 0upx;
 	}
 	.btn-comment-number {
 		color: white;
@@ -624,16 +712,12 @@
 		font-size: 26upx;
 	}
 	.btn-share {
-		color: white;
 		width: 100upx;
 		height: 100upx;
-		margin-bottom: -20upx;
-		font-size: 70upx;
-		text-align: center;
+		margin-bottom: 0upx;
 	}
 	.btn-share-number {
 		color: white;
-		margin-bottom: 220upx;
 		text-align: center;
 		font-size: 26upx;
 	}
@@ -644,7 +728,8 @@
 		background-color: #fff;
 		z-index: 999999;
 		position: absolute;
-		bottom: 63upx;
+		/* bottom: 60upx; */
+		bottom: 0upx;
 		//#ifndef APP-PLUS-NVUE
 		animation: flicker 4s linear infinite;
 		animation-direction:alternate;
@@ -663,7 +748,7 @@
 	//#endif
 	
 	.commentPop {
-		height: 1200upx;
+		height: 1080upx;
 		position: absolute;
 		bottom: 0;
 		left: 0;
@@ -671,8 +756,6 @@
 		z-index: 9999;
 		border-top-left-radius: 20upx;
 		border-top-right-radius: 20upx;
-		/* padding-bottom: 100upx; */
-		/* padding-bottom: 40upx; */
 	}
 	.commentPop-close-icon {
 		color: gray;

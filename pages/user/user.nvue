@@ -15,9 +15,9 @@
 		},
 		methods: {
 			gotoDouyin: function() {
-				uni.navigateTo({
+				uni.switchTab({
 					url: '/pages/douyin/douyin'
-				});
+				})
 			}
 		}
 	}
