@@ -1,0 +1,67 @@
+<template>
+	<view class="w-100 flex-row a-center j-center" :style="'background-color: '+ bgColor +';height: 50px;position: fixed;left: 0upx;bottom: 0upx;'">
+		<view class="flex-1 j-center a-center" @click.stop="cutTab('douyin', 0)">
+			<text class="text-center" :class="curIndex === 0?'text-white':'tabbar-unselected-textcolor'">首页</text>
+		</view>
+		<view class="flex-1 j-center a-center" @click.stop="cutTab('index', 1)">
+			<text class="text-center" :class="curIndex === 1?'text-white':'tabbar-unselected-textcolor'">发现</text>
+		</view>
+		<view class="flex-1 j-center a-center" @click.stop="cutTab('put', 2)">
+			<image src="/static/tabbar/add.png" mode="widthFix" style="width: 80upx;height: 72upx;"></image>
+		</view>
+		<view class="flex-1 j-center a-center" @click.stop="cutTab('map', 3)">
+			<text class="text-center" :class="curIndex === 3?'text-white':'tabbar-unselected-textcolor'">消息</text>
+		</view>
+		<view class="flex-1 j-center a-center" @click.stop="cutTab('user', 4)">
+			<text class="text-center" :class="curIndex === 4?'text-white':'tabbar-unselected-textcolor'">我的</text>
+		</view>
+	</view>
+</template>
+
+<script>
+	// 自定义的底部tabbar
+	// 实现tabbar背景透明，解决tabbar层级覆盖的问题(动态隐藏tabbar体验不够好)
+	export default {
+		props: {
+			curIndex: {
+				type: Number,
+				default: 0
+			},
+			bgTranparent: {
+				type: Boolean,
+				default: false
+			}
+		},
+		data() {
+			return {
+				
+			}
+		},
+		computed: {
+			bgColor() {
+				// 默认tabbar背景黑色
+				let color = "#000"
+				// 判断是否需要背景透明
+				if (this.bgTranparent) color = "rgba(0,0,0,0)"
+				return color
+			}
+		},
+		methods: {
+			// tabbar切换
+			cutTab: function(page, index) {
+				this.$emit('tabbarClicked', {
+					cur: this.curIndex,
+					clicked: index
+				})
+				if (this.curIndex === index) return
+				uni.switchTab({
+					url: '/pages/'+ page +'/' + page
+				})
+			},
+		}
+	}
+</script>
+
+<style>
+
+</style>

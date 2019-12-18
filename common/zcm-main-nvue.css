@@ -229,6 +229,9 @@
 .text-center {
 	text-align: center;
 }
+.tabbar-unselected-textcolor {
+	color: #C0C0C0;
+}
 
 
 /* 

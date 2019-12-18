@@ -46,11 +46,21 @@
 				</video>
 			</swiper-item>
 		</swiper>
+		
+		
+		<view class="w-100 dy-tabbar-view">
+			<dy-tabbar :curIndex="0" :bgTranparent="true" @tabbarClicked="tabbarbeClicked"></dy-tabbar>
+		</view>
 	</view>
 </template>
 
 <script>
+	import dyTabbar from '@/components/common/dy-tabbar.nvue';
+	
 	export default {
+		components: {
+			dyTabbar
+		},
 		data() {
 			return {
 				videoContext: null,
@@ -259,7 +269,9 @@
 				return `${width}upx`
 			}
 		},
-		created: function(){
+		onLoad: function(){
+			uni.hideTabBar({animation: false})
+		
 			//#ifdef APP-PLUS
 			plus.screen.lockOrientation("portrait-primary")
 			//#endif
@@ -268,6 +280,29 @@
 			let width = uni.getSystemInfoSync().windowWidth 
 			this.width = `${width}px` 
 			
+			
+			console.log(this.commentPanel);
+			// 如果页面创建的时候没有成功获取到subnvue对象，则再次尝试获取
+			if (!this.commentPanel) {
+				this.commentPanel = uni.getSubNVueById('subcommentpanel')
+				if (this.commentPanel) {
+					this.commentPanel.hide('none', 1) 
+				}
+				console.log(this.commentPanel);
+			}
+			
+			// 监听评论列表子窗口中触发的事件
+			uni.$on('closeCommentFromSub', () => {
+				console.log('1111111111111');
+				this.closeComment()
+			})
+			uni.$on('submitCommentFromSub', (data) => {
+				this.commentInfo = data
+				this.submitComment()
+			})
+			
+			
+			console.log('onload');
 			let randArr = []
 			let rand = 0
 			this.videoList.forEach((item) => {
@@ -298,7 +333,8 @@
 				this.isPlaying = true
 				this.showPlayIcon = false
 			}
-			
+			console.log('show2');
+			console.log(this.commentPanel);
 			// 如果页面创建的时候没有成功获取到subnvue对象，则再次尝试获取
 			if (!this.commentPanel) {
 				this.commentPanel = uni.getSubNVueById('subcommentpanel')
@@ -314,6 +350,7 @@
 				this.isPlaying = false
 				this.showPlayIcon = true
 			}
+			console.log('hide');
 		},
 		onReady: function() {
 			// plus.video.getVideoPlayerById("myVideo1")
@@ -321,24 +358,6 @@
 			this.videoContext = this.$refs['myVideo1'][0]
 			this.pre_videoContext = this.videoContext
 			this.videoContext.play()
-			
-			// 引入SubNVue原生子窗体 (可覆盖普通组件无法覆盖的map video等原生组件)
-			// uni-app有提供cover-view cover-image两个特殊组件专门用来覆盖map video等原生组件
-			// 但cover-view里面无法嵌套其他组件，能实现的需求很有限； 所以选择使用SubNVue原生子窗体
-			this.commentPanel = uni.getSubNVueById('subcommentpanel')
-			if (this.commentPanel) {
-				this.commentPanel.hide('none', 1) 
-			}
-			console.log(this.commentPanel);
-			
-			// 监听评论列表子窗口中触发的事件
-			uni.$on('closeCommentFromSub', () => {
-				this.closeComment()
-			})
-			uni.$on('submitCommentFromSub', (data) => {
-				this.commentInfo = data
-				this.submitComment()
-			})
 			
 			// 没用
 			// let oj = plus.nativeObj.View.getViewById("myVideo1")
@@ -416,9 +435,13 @@
 			// video被点击 (自己实现对单击双击的判断)
 			clickVideo: function() {
 				if (this.stopVideoClick) return
-				if (this.showCommentPop) return this.closeComment()
+				if (this.showCommentPop) {
+					console.log('22222222222');
+					return this.closeComment()
+				}
 				
-				if (this.startClick) {
+				
+				if (this.startClick) { 
 					// 双击
 					console.log('double click');
 					this.startClick = false
@@ -492,9 +515,22 @@
 					list: this.videoList[this.videoIndex].commentList
 				})
 				
+				
+				
+				// 引入SubNVue原生子窗体 (可覆盖普通组件无法覆盖的map video等原生组件)
+				// uni-app有提供cover-view cover-image两个特殊组件专门用来覆盖map video等原生组件
+				// 但cover-view里面无法嵌套其他组件，能实现的需求很有限； 所以选择使用SubNVue原生子窗体
+				if (!this.commentPanel) {
+					this.commentPanel = uni.getSubNVueById('subcommentpanel')
+					if (this.commentPanel) {
+						this.commentPanel.hide('none', 1) 
+					}
+					console.log(this.commentPanel);
+				}
+				
+				
 				this.showCommentPop = true
-				// 显示评论面板的同时隐藏tabbar
-				uni.hideTabBar({animation: false})
+				// 显示评论面板
 				this.commentPanel.show('slide-in-bottom', 300)
 			},
 			closeComment: function() {
@@ -503,11 +539,19 @@
 				if (this.wv) {
 					// this.wv.setStyle({mask:'none'});
 				}
+				// 关闭软键盘
+				// #ifdef APP-PLUS
+				plus.key.hideSoftKeybord()
+				// #endif
+				// #ifndef APP-PLUS
+				uni.hideKeyboard()
+				// #endif
 				this.showCommentPop = false
+				console.log(this.commentPanel); 
+				if (!this.commentPanel) {
+					this.commentPanel = uni.getSubNVueById('subcommentpanel')
+				}
 				this.commentPanel.hide('slide-out-bottom', 300)
-				setTimeout(() => {
-					uni.showTabBar({animation: false})
-				}, 300)
 			},
 			submitComment: function() {
 				if (this.commentInfo == '') return uni.showToast({title: '评论不能为空', icon: 'none'});
@@ -563,6 +607,13 @@
 				// #endif
 			},
 			
+			tabbarbeClicked: function(e) {
+				// this.preventClickToVideo()
+				console.log('tabbarbeClicked');
+				console.log(e);
+			},
+			
+			
 			// 以下都是video的系统事件
 			// 视频播放时长更新
 			vidoeTimeUpdate: function(event) {
@@ -595,6 +646,7 @@
 		width: 100%;
 		min-height: 100%;
 		display: flex;
+		/* background-color: rgba(0,0,0,0); */
 	}
 	/* #endif */
 	
@@ -602,7 +654,8 @@
 		flex: 1;
 		flex-direction: column;
 		overflow: hidden;
-		background-color: #ffffff;
+		background-color: black;
+		/* background-color: rgba(0,0,0,0); */
 	}
 	.tab-box {
 		flex: 1;
@@ -615,7 +668,7 @@
 	.topsearch {
 		width: 60upx;
 		position: absolute;
-		top: 150upx; 
+		top: 180upx; 
 		/* top: 80upx; */
 		left: 60upx;
 		z-index: 9999;
@@ -623,7 +676,7 @@
 	.toptab {
 		width: 160upx;
 		position: absolute;
-		top: 150upx;  
+		top: 180upx;  
 		/* top: 80upx; */
 		left: 280upx;
 		z-index: 9999;
@@ -649,7 +702,7 @@
 	}
 	.cover-info {
 		position: absolute; 
-		bottom: 100upx; 
+		bottom: 160upx; 
 		left: 12upx;
 		z-index: 9999;
 	}
@@ -680,7 +733,7 @@
 	
 	.cover-buttons {
 		position: absolute;
-		bottom: 300upx;
+		bottom: 370upx;
 		right: 0upx;
 		z-index: 9999;
 		/* background-color: rgba(0,0,0,0); */
@@ -730,8 +783,8 @@
 		background-color: #fff;
 		z-index: 999999;
 		position: absolute;
-		bottom: 60upx;
-		/* bottom: 0upx; */
+		bottom: 80px;
+		/* bottom: 50px; */
 		//#ifndef APP-PLUS-NVUE
 		animation: flicker 4s linear infinite;
 		animation-direction:alternate;
@@ -748,5 +801,13 @@
 	    100% { box-shadow:0 0 20upx #FFFFFF; }
 	}
 	//#endif
+	
+	.dy-tabbar-view {
+		position: absolute;
+		bottom: 0upx;
+		left: 0upx;
+		z-index: 9999;
+		background-color: rgba(0,0,0,0);
+	}
 	
 </style>

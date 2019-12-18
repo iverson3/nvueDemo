@@ -40,6 +40,9 @@
 		</uni-list>
 		
 		
+		<view class="w-100" style="height: 50px;"></view>
+		<dy-tabbar :curIndex="1"></dy-tabbar>
+		
 		
 		
 		<!-- <list :show-scrollbar="false" class="w-100 h-100">
@@ -52,7 +55,7 @@
 					<text class="font-md text-muted">{{ refreshtext }}</text>
 				</refresh>
 			</template>
-			
+
 			<template v-if="list.length > 0">
 				<loading style="height: 70px;" 
 				class="w-100 flex-row j-center a-center"
@@ -72,6 +75,7 @@
 	import uniRefresh from '@/components/uni-ui/uni-list-fromnews/uni-refresh.vue';
 	import uniLoadMore from '@/components/uni-ui/uni-load-more.vue';
 	import uniSwipeAction from '@/components/uni-ui/uni-swipe-action/uni-swipe-action.vue'
+	import dyTabbar from '@/components/common/dy-tabbar.nvue';
 	
 	import {mapState, mapMutations} from 'vuex'
 	
@@ -82,7 +86,8 @@
 			uniCell,
 			uniRefresh,
 			uniLoadMore,
-			uniSwipeAction
+			uniSwipeAction,
+			dyTabbar
 		},
 		data() {
 			return {
@@ -124,6 +129,7 @@
 			})
 		},
 		onLoad: function(e) {
+			uni.hideTabBar({animation: false})
 			this.getData()
 			
 			// 获取globalData全局数据 (全端通用)
@@ -139,7 +145,7 @@
 		methods: {
 			getData() {
 				let data = []
-				for (let i = this.index + 1; i <= this.index + 50; i++) {
+				for (let i = this.index + 1; i <= this.index + 20; i++) {
 					data.push({
 						id: i,
 						title: "title title title  " + i,
@@ -150,7 +156,7 @@
 						good_num: i + "%"
 					})
 				}
-				this.index = this.index + 50
+				this.index = this.index + 20
 				this.list = [...this.list, ...data]
 				this.page = this.page + 1
 				

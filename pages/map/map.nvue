@@ -1,15 +1,27 @@
 <template>
 	<view>
 		
+		
+		
+		<view class="w-100" style="height: 50px;"></view>
+		<dy-tabbar :curIndex="3"></dy-tabbar>
 	</view>
 </template>
 
 <script>
+	import dyTabbar from '@/components/common/dy-tabbar.nvue';
+	
 	export default {
+		components: {
+			dyTabbar
+		},
 		data() {
 			return {
 				
 			}
+		},
+		onLoad: function() {
+			uni.hideTabBar({animation: false})
 		},
 		methods: {
 			
