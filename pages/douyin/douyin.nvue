@@ -117,14 +117,12 @@
 			this.width = `${width}px` 
 			
 			
-			console.log(this.commentPanel);
 			// 如果页面创建的时候没有成功获取到subnvue对象，则再次尝试获取
 			if (!this.commentPanel) {
 				this.commentPanel = uni.getSubNVueById('subcommentpanel')
 				if (this.commentPanel) {
 					this.commentPanel.hide('none', 1) 
 				}
-				console.log(this.commentPanel);
 			}
 			
 			// 监听评论列表子窗口中触发的事件
@@ -161,15 +159,13 @@
 				this.isPlaying = true
 				this.showPlayIcon = false
 			}
-			console.log('show2');
-			console.log(this.commentPanel);
+			console.log('show');
 			// 如果页面创建的时候没有成功获取到subnvue对象，则再次尝试获取
 			if (!this.commentPanel) {
 				this.commentPanel = uni.getSubNVueById('subcommentpanel')
 				if (this.commentPanel) {
 					this.commentPanel.hide('none', 1) 
 				}
-				console.log(this.commentPanel);
 			}
 		},
 		onHide: function() {
@@ -253,13 +249,6 @@
 					}
 				}
 				this.pre_videoIndex = this.videoIndex
-				
-				
-				console.log(this.playIndex);
-				console.log(this.playList.length);
-				
-				console.log(this.videoIndex);
-				console.log(this.videoList.length);
 		
 				this.$nextTick(() => {
 					let videoId = 'myVideo' + (index+1)
@@ -363,6 +352,7 @@
 					console.log('double click');
 					this.startClick = false
 					this.videoList[this.videoIndex].liked = true
+					this.playList[this.playIndex].liked = true
 				} else {
 					this.startClick = true
 					setTimeout(() => {
@@ -413,6 +403,7 @@
 			dolike: function() {
 				this.preventClickToVideo()
 				this.videoList[this.videoIndex].liked = !this.videoList[this.videoIndex].liked
+				this.playList[this.playIndex].liked = !this.playList[this.playIndex].liked
 			},
 			// 显示评论列表面板
 			showComment: function() {
@@ -426,13 +417,10 @@
 					// 	this.showCommentPop = false
 					// },false);
 				}
-				
 				// 通知SubNVue原生子窗体进行数据更新或操作
 				uni.$emit('setCommentList', {
 					list: this.videoList[this.videoIndex].commentList
 				})
-				
-				
 				
 				// 引入SubNVue原生子窗体 (可覆盖普通组件无法覆盖的map video等原生组件)
 				// uni-app有提供cover-view cover-image两个特殊组件专门用来覆盖map video等原生组件
@@ -442,16 +430,13 @@
 					if (this.commentPanel) {
 						this.commentPanel.hide('none', 1) 
 					}
-					console.log(this.commentPanel);
 				}
-				
 				
 				this.showCommentPop = true
 				// 显示评论面板
 				this.commentPanel.show('slide-in-bottom', 300)
 			},
 			closeComment: function() {
-				console.log('close comment');
 				this.preventClickToVideo()
 				if (this.wv) {
 					// this.wv.setStyle({mask:'none'});
@@ -464,7 +449,6 @@
 				uni.hideKeyboard()
 				// #endif
 				this.showCommentPop = false
-				console.log(this.commentPanel); 
 				if (!this.commentPanel) {
 					this.commentPanel = uni.getSubNVueById('subcommentpanel')
 				}
@@ -472,14 +456,16 @@
 			},
 			submitComment: function() {
 				if (this.commentInfo == '') return uni.showToast({title: '评论不能为空', icon: 'none'});
-				this.videoList[this.videoIndex].commentList.push({
+				let comment = {
 					id: 100,
 					userpic: "/static/head.jpeg",
 					nickname: "王小贱",
 					content: this.commentInfo,
 					comment_time: "12-16",
 					likes: 0
-				})
+				}
+				this.videoList[this.videoIndex].commentList.push(comment)
+				this.playList[this.playIndex].commentList.push(comment)
 				this.commentInfo = ""
 				uni.$emit('commitSuccess')
 				uni.$emit('setCommentList', {
@@ -526,8 +512,8 @@
 			
 			tabbarbeClicked: function(e) {
 				// this.preventClickToVideo()
-				console.log('tabbarbeClicked');
-				console.log(e);
+				// console.log('tabbarbeClicked');
+				// console.log(e);
 			},
 			
 			
