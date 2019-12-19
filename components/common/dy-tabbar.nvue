@@ -54,6 +54,7 @@
 					clicked: index
 				})
 				if (this.curIndex === index) return
+				uni.hideTabBar({animation: false})
 				uni.switchTab({
 					url: '/pages/'+ page +'/' + page
 				})

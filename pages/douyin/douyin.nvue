@@ -2,7 +2,7 @@
 	<view class="tabs w-100" :style="{ height: height }">
 		
 		<swiper class="tab-box w-100" ref="swiper1" :vertical="true" :current="videoIndex" :duration="300" 
-		 @change="onswiperchange" @transition="onswiperscroll"
+		 @change="onswiperchange" @transition="onswiperscroll" :circular="swiperLoop"
 		 @animationfinish="animationfinish">
 			<swiper-item class="swiper-item w-100" v-for="(item, index) in videoList" :key="index">
 				<video :id="'myVideo'+(index+1)" :ref="'myVideo'+(index+1)" class="w-100"
@@ -65,7 +65,8 @@
 			return {
 				videoContext: null,
 				pre_videoContext: null,
-				videoIndex: 0,
+				videoIndex: 0,         // 当前所在的swiper滑块索引 (0-4)
+				pre_videoIndex: 0,     // 记录上一个swiper滑块索引(用来判断滑动的方向)
 				isPlaying: true,       // 视频是否正在播放中
 				// disabledSwiper: true,  // 是否禁止swiper滑动 (无效)
 				showCommentPop: false, // 是否显示评论列表popup
@@ -79,184 +80,18 @@
 				width: '750upx',
 				height: '667px',
 				commentPanel: null,
-				
-				videoList: [
-					{
-						id: 1,
-						user: "贫穷料理",
-						userpic: "/static/head.jpeg",
-						title: "1111",
-						poster: "",
-						liked: false,
-						url: "http://chat.ukuhub.com/video/d1.mp4",
-						desc: "#邓超、鹿晗、陈赫跑男家族齐聚首，一起吃夜宵好玩好玩呢，给个面子记得点赞~",
-						commentList: [
-							{
-								id: 1,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 2,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮2",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 1,
-							},
-							{
-								id: 3,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮3",
-								content: "太喜欢了，棒棒哒! 马老师动作流畅特别有范儿 帅帅帅",
-								comment_time: "12-15",
-								likes: 2,
-							},
-							{
-								id: 4,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮4",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 5,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮5",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 12,
-							},
-							{
-								id: 6,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮6",
-								content: "太喜欢了，棒棒哒6666",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 7,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮77",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 8,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮8",
-								content: "太喜欢了，棒棒哒8888888",
-								comment_time: "12-15",
-								likes: 3,
-							}
-						],
-					},
-					{
-						id: 2,
-						user: "王小贱",
-						userpic: "/static/head.jpeg",
-						title: "22222",
-						poster: "",
-						liked: true,
-						url: "http://chat.ukuhub.com/video/d2.mp4",
-						desc: "#dou是宝宝首次还原，婴儿小安！胡子小安，性感小安，给个面子记得点赞~",
-						commentList: [
-							{
-								id: 1,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 2,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮2",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 3,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮3",
-								content: "太喜欢了，棒棒哒333333",
-								comment_time: "12-15",
-								likes: 3,
-							}
-						],
-					},
-					{
-						id: 3,
-						user: "薇薇酱",
-						userpic: "/static/head.jpeg",
-						title: "333333",
-						poster: "",
-						liked: false,
-						url: "http://chat.ukuhub.com/video/d3.mp4",
-						desc: "#这里是王老师的ukulele，欢迎关注我哦，记得点赞哦 么么哒~",
-						commentList: [
-							{
-								id: 1,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 2,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮2",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 3,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮3",
-								content: "太喜欢了，棒棒哒333333",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 4,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮4",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 5,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮5",
-								content: "太喜欢了，棒棒哒",
-								comment_time: "12-15",
-								likes: 3,
-							},
-							{
-								id: 6,
-								userpic: "/static/head.jpeg",
-								nickname: "张大炮6",
-								content: "太喜欢了，棒棒哒6666",
-								comment_time: "12-15",
-								likes: 3,
-							}
-						],
-					}
-				]
+				playList: [],          // 视频播放列表
+				playIndex: 0,          // 视频列表中，当前播放的视频的索引    
+				videoList: []
 			}
 		},
 		computed: {
+			// swiper滑块是否可以首尾相连循环滑动
+			swiperLoop() {
+				return true
+				if (this.playIndex > 2) return true
+				return false
+			},
 			likepic() {
 				let pic = this.videoList[this.videoIndex].liked ? '/static/liked.png' : '/static/nolike.png'
 				return pic
@@ -270,6 +105,7 @@
 			}
 		},
 		onLoad: function(){
+			console.log('onload');
 			uni.hideTabBar({animation: false})
 		
 			//#ifdef APP-PLUS
@@ -293,7 +129,6 @@
 			
 			// 监听评论列表子窗口中触发的事件
 			uni.$on('closeCommentFromSub', () => {
-				console.log('1111111111111');
 				this.closeComment()
 			})
 			uni.$on('submitCommentFromSub', (data) => {
@@ -301,19 +136,12 @@
 				this.submitComment()
 			})
 			
+			// 页面加载的时候 获取视频数据
+			let data = this.randGenerateVideoData()
+			this.playIndex = 0
+			this.playList = data;
+			this.videoList = data;
 			
-			console.log('onload');
-			let randArr = []
-			let rand = 0
-			this.videoList.forEach((item) => {
-				while (true){
-					rand = Math.floor(Math.random() * 11) + 1;  // 含最大值，含最小值 
-					if (randArr.indexOf(rand) === -1) break
-				}
-				randArr.push(rand)
-				let url = "http://chat.ukuhub.com/video/d"+ rand +".mp4"
-				item.url = url
-			})
 			
 			// #ifdef APP-PLUS
 			this.wv = plus.webview.currentWebview();
@@ -400,18 +228,53 @@
 			onswiperchange(e) {
 				let index = e.detail.current
 				this.videoIndex = index
-				let videoId = 'myVideo' + (index+1)
-				// this.videoContext = uni.createVideoContext(videoId, this)
-				this.videoContext = this.$refs[videoId][0]
-				
-				if (this.pre_videoContext) {
-					// 关闭视频，并释放相关资源
-					this.pre_videoContext.stop()
-					this.pre_videoContext = null
+				// 0 1 2 3 4  -> 0 1 2 3 4  -> 0 1 2 3 4   总共5个video实例
+				if ((this.videoIndex === 1 && this.pre_videoIndex === 0) || (this.videoIndex > this.pre_videoIndex && this.pre_videoIndex !== 0) || (this.pre_videoIndex === 4 && this.videoIndex === 0)) {
+					// 向下滑动切换视频
+					this.playIndex++
+					// 判断是否需要继续向播放列表中添加视频数据了
+					if (this.playIndex + 3 > this.playList.length) {
+						this.addPlayList()
+					}
+					if (this.videoIndex === 0) {
+						// 整体替换swiper中的5个视频数据
+						this.videoList = this.playList.slice(this.playIndex, this.playIndex + 5)
+					}
+				} else {
+					// 向上滑动切换视频
+					this.playIndex--
+					if (this.playIndex < 0) {
+						this.playIndex = 0
+						this.videoIndex = 0
+					}
+					if (this.videoIndex === 4) {
+						// 整体替换swiper中的5个视频数据
+						this.videoList = this.playList.slice(this.playIndex - 4, this.playIndex + 1)
+					}
 				}
-				this.pre_videoContext = this.videoContext
-				this.videoContext.play()
-				this.isPlaying = true
+				this.pre_videoIndex = this.videoIndex
+				
+				
+				console.log(this.playIndex);
+				console.log(this.playList.length);
+				
+				console.log(this.videoIndex);
+				console.log(this.videoList.length);
+		
+				this.$nextTick(() => {
+					let videoId = 'myVideo' + (index+1)
+					// this.videoContext = uni.createVideoContext(videoId, this)
+					this.videoContext = this.$refs[videoId][0]
+					
+					if (this.pre_videoContext) {
+						// 关闭视频，并释放相关资源
+						this.pre_videoContext.stop()
+						this.pre_videoContext = null
+					}
+					this.pre_videoContext = this.videoContext
+					this.videoContext.play()
+					this.isPlaying = true
+				})
 			},
 			// 切换视频的过程中不断触发
 			onswiperscroll(e) {
@@ -419,11 +282,66 @@
 				if (this.showCommentPop && !this.stopVideoClick) {
 					this.closeComment()
 				}
+				// console.log(e.detail.dy);
+				// 向下切换动画过半
+				if (!this.replaceOver && e.detail.dy > 0 && e.detail.dy >= (667 / 2)) {
+					// 替换视频数据
+					// this.replaceOver = true
+				}
+				// 向上切换动画过半
+				if (!this.replaceOver && e.detail.dy < 0 && e.detail.dy <= (-667 / 2)) {
+					// this.replaceOver = true
+				}
 			},
 			// 视频切换动画结束
 			animationfinish(e) {
 				// console.log(e);
 			},
+			
+			// 从服务端请求获取视频数据并添加到播放列表中
+			addPlayList: function() {
+				// 模拟从服务端获取的视频数据 (每次获取5条)
+				let videoData = this.randGenerateVideoData()
+				this.playList = this.playList.concat(videoData)
+			},
+			randGenerateVideoData: function() {
+				let res = []
+				let randArr = []
+				let rand = 0
+				for (let k = 0; k < 5; k++) {
+					while (true){
+						rand = Math.floor(Math.random() * 11) + 1;  // 含最大值，含最小值 
+						if (randArr.indexOf(rand) === -1) break
+					}
+					randArr.push(rand)
+					let url = "http://chat.ukuhub.com/video/d"+ rand +".mp4"
+					let comments = []
+					for (let j = 0; j < rand; j++) {
+						comments.push({
+							id: j,
+							userpic: "/static/head.jpeg",
+							nickname: "张大炮 " + j,
+							content: "太喜欢了，棒棒哒 " + rand + '-' + j,
+							comment_time: "12-" + (j + 1),
+							likes: j,
+						})
+					}
+					
+					res.push({
+						id: rand,
+						user: "王小贱 " + rand,
+						userpic: "/static/head.jpeg",
+						title: rand  +''+ rand +''+ rand,
+						poster: "",
+						liked: false,
+						url: url,
+						desc: "#邓超、鹿晗、陈赫跑男家族齐聚首，一起吃夜宵好玩好玩呢，给个面子记得点赞~",
+						commentList: comments
+					})
+				}
+				return res
+			},
+			
 			
 			// 阻止点击事件穿透到video上
 			preventClickToVideo: function() {
@@ -436,7 +354,6 @@
 			clickVideo: function() {
 				if (this.stopVideoClick) return
 				if (this.showCommentPop) {
-					console.log('22222222222');
 					return this.closeComment()
 				}
 				
@@ -668,16 +585,16 @@
 	.topsearch {
 		width: 60upx;
 		position: absolute;
-		top: 180upx; 
-		/* top: 80upx; */
+		/* top: 180upx; */
+		top: 80upx;
 		left: 60upx;
 		z-index: 9999;
 	}
 	.toptab {
-		width: 160upx;
+		width: 200upx;
 		position: absolute;
-		top: 180upx;  
-		/* top: 80upx; */
+		/* top: 180upx;  */
+		top: 80upx;
 		left: 280upx;
 		z-index: 9999;
 	}
@@ -783,8 +700,8 @@
 		background-color: #fff;
 		z-index: 999999;
 		position: absolute;
-		bottom: 80px;
-		/* bottom: 50px; */
+		/* bottom: 80px; */
+		bottom: 50px;
 		//#ifndef APP-PLUS-NVUE
 		animation: flicker 4s linear infinite;
 		animation-direction:alternate;

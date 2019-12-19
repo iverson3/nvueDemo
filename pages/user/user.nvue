@@ -23,7 +23,7 @@
 			}
 		},
 		onLoad: function() {
-			uni.hideTabBar({animation: false})
+			
 		},
 		methods: {
 			gotoDouyin: function() {

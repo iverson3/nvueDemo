@@ -129,7 +129,6 @@
 			})
 		},
 		onLoad: function(e) {
-			uni.hideTabBar({animation: false})
 			this.getData()
 			
 			// 获取globalData全局数据 (全端通用)
