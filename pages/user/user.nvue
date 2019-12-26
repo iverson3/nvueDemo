@@ -19,11 +19,61 @@
 		},
 		data() {
 			return {
-				
+				socketTask: null
 			}
+		},
+		onShow: function() {
+			uni.connectSocket({
+				url: 'ws://47.107.149.234:10001',
+				success: (res) => {
+					console.log(res);
+				},
+				fail: (err) => {
+					console.log(err);
+				}
+			});
+			uni.onSocketOpen(function (res) {
+				console.log('WebSocket连接已打开！');
+			});
+			uni.onSocketError(function (res) {
+			  console.log('WebSocket连接打开失败，请检查！');
+			});
 		},
 		onLoad: function() {
 			
+			return
+			
+			this.socketTask = uni.connectSocket({
+				url: "ws://47.107.149.234:10001",
+				success: (res) => {
+					console.log(res);
+				},
+				fail: (err) => {
+					uni.showToast({title: 'socket连接失败', icon: 'none'});
+					console.log(err);
+				}
+			})
+			uni.onSocketOpen((res) => {
+				console.log(res);
+			})
+			
+			this.socketTask.onMessage((data) => {
+				console.log('data from server');
+				console.log(data);
+			})
+			// this.socketTask.send({
+			// 	data: "2222",
+			// 	success: (res) => {
+			// 		console.log(res);
+			// 	},
+			// 	fail: (err) => {
+			// 		uni.showToast({title: '数据发送失败', icon: 'none'});
+			// 		console.log(err);
+			// 	}
+			// })
+		},
+		onUnload: function() {
+			if (this.socketTask) this.socketTask.close()
 		},
 		methods: {
 			gotoDouyin: function() {
