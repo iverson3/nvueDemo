@@ -16,9 +16,9 @@
 			</block>
 		</view>
 		
-		<button type="primary" class="mt-2" @click="uploadImage">上传图片</button>
+		<button type="primary" class="mt-2" @click="uploadImage" :disabled="isUploading">上传图片</button>
 		<button type="default" class="mt" @click="cancelUploadImage">取消上传</button>
-		<button v-if="showReupload" type="default" class="mt" @click="uploadImage">再次尝试</button>
+		<button v-if="showReupload" type="default" class="mt" @click="uploadImage" :disabled="isUploading">再次尝试</button>
 		
 		
 		<button type="primary" class="mt-2" @click="getImageUrls">获得图片地址</button>
@@ -40,7 +40,8 @@
 			return {
 				imageUrl: [],
 				curUploadIndex: 0,
-				tempFilePathArr: []  // 图片临时路径数组(用来防止重复选择图片)
+				tempFilePathArr: [],  // 图片临时路径数组(用来防止重复选择图片)
+				isUploading: false    // 是否有图片正在上传中（全局的标识 防止用户重复点击上传按钮）
 			}
 		},
 		computed: {
@@ -116,21 +117,20 @@
 			},
 			// 上传图片
 			uploadImage: function() {
+				if (this.isUploading) return
 				this.curUploadIndex = -1
+				this.isUploading = true
 				this.queueUpload()
 			},
 			// 一个接一个的进行上传
 			queueUpload: function() {
 				this.curUploadIndex++
-				if (this.imageUrl.length === 0) return
-				if (this.curUploadIndex >= this.imageUrl.length) return
+				if (this.imageUrl.length === 0 || this.curUploadIndex >= this.imageUrl.length) return
 				
 				let item = this.imageUrl[this.curUploadIndex]
-				// 跳过已经上传成功了的
-				if (item.uploadRes) {
-					this.queueUpload()
-					return
-				}
+				let index = this.curUploadIndex
+				// 跳过已经上传成功的图片 直接开始下一个图片的上传
+				if (item.uploadRes) return this.queueUpload()
 				
 				item.uploading = true
 				item.uploadTask = uni.uploadFile({
@@ -139,39 +139,35 @@
 					name: "imgBlob",
 					success: (res) => {
 						console.log(res);
-						item.uploading = false
-						this.queueUpload()
+						if (!res.data) return item.uploadRes = false
 						
-						if (!res.data || res.data === '') {
-							// 上传失败
-							item.uploadRes = false
-							return
-						}
 						// 将服务端返回的数据json化成对象
 						let obj = JSON.parse(res.data)
 						if (obj.success) {
-							// 上传成功
 							item.uploadRes = true
 							// 保存返回的图片地址
 							item.imageServerLink = obj.url
 						} else {
-							// 上传失败
 							item.uploadRes = false
 							console.log(obj.error);
 						}
-						
 					},
 					fail: (err) => {
 						console.log(err);
 						item.uploadRes = false
+					},
+					complete: () => {
 						item.uploading = false
-						this.queueUpload()
+						if (index === this.imageUrl.length - 1) {
+							this.isUploading = false
+						} else {
+							this.queueUpload()
+						}
 					}
 				})
 				
 				// 监听上传进度
 				item.uploadTask.onProgressUpdate((uploadInfo) => {
-					// console.log(uploadInfo);
 					// 更新上传进度
 					item.progress = uploadInfo.progress
 					console.log(uploadInfo.progress, uploadInfo.totalBytesSent, uploadInfo.totalBytesExpectedToSend);
@@ -186,6 +182,7 @@
 						item.uploadRes = false
 					}
 				})
+				this.isUploading = false
 			},
 			// 获取所有上传成功的图片的服务器地址
 			getImageUrls: function() {
