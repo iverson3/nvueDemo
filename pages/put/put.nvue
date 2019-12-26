@@ -39,8 +39,8 @@
 		data() {
 			return {
 				imageUrl: [],
-				
-				curUploadIndex: 0
+				curUploadIndex: 0,
+				tempFilePathArr: []  // 图片临时路径数组(用来防止重复选择图片)
 			}
 		},
 		computed: {
@@ -64,20 +64,33 @@
 					count: 9 - this.imageUrl.length,
 					success: (res) => {
 						console.log(res);
-						// res.tempFiles[0].path
-						// res.tempFiles[0].size
+						// 判断是否有图片过大
 						let pass = res.tempFiles.every(item => item.size <= 600000)
-						if (!pass) return uni.showToast({title: '图片过大', icon: 'none'});
+						if (!pass) {
+							uni.showModal({content: '过大的图片未被使用', showCancel: false});
+						}
 						
-						res.tempFiles.forEach((item) => {
-							item.uploadTask = null
-							item.uploading = false
-							item.progress = 0
-							item.uploadRes = null
-							item.imageServerLink = ''
+						// 过滤掉图片大小不满足条件的图片
+						let images = res.tempFiles.filter(item => item.size <= 600000)
+						// 过滤掉重复选择的相同的图片
+						images = images.filter(item => {
+							let index = this.tempFilePathArr.indexOf(item.path)
+							return index === -1
+						})
+						if (images.length === 0) return
+						
+						images.forEach((item) => {
+							item.uploadTask = null    // 上传对象 (通过该对象，可监听上传进度变化事件，以及取消上传任务)
+							item.uploading = false    // 是否正在上传中
+							item.progress = 0         // 上传进度
+							item.uploadRes = null     // 上传结果： null未上传 false上传失败 true上传成功
+							item.imageServerLink = '' // 图片的服务器地址
+							
+							// 保存该图片的临时路径 防止再次选择该图片
+							this.tempFilePathArr.push(item.path)
 						})
 						
-						this.imageUrl = [...this.imageUrl, ...res.tempFiles]
+						this.imageUrl = [...this.imageUrl, ...images]
 					},
 					fail: (err) => {
 						uni.showToast({title: '选择图片失败', icon: 'none'});
@@ -85,9 +98,11 @@
 					}
 				})
 			},
+			// 删除图片 (只能在上传之前进行删除)
 			deleteImage: function(index) {
 				this.imageUrl.splice(index, 1)
 			},
+			// 预览图片
 			previewImage: function(index) {
 				let pathArr = []
 				this.imageUrl.forEach(item => {
@@ -99,10 +114,12 @@
 					loop: true
 				})
 			},
+			// 上传图片
 			uploadImage: function() {
 				this.curUploadIndex = -1
 				this.queueUpload()
 			},
+			// 一个接一个的进行上传
 			queueUpload: function() {
 				this.curUploadIndex++
 				if (this.imageUrl.length === 0) return
@@ -155,10 +172,12 @@
 				// 监听上传进度
 				item.uploadTask.onProgressUpdate((uploadInfo) => {
 					// console.log(uploadInfo);
+					// 更新上传进度
 					item.progress = uploadInfo.progress
 					console.log(uploadInfo.progress, uploadInfo.totalBytesSent, uploadInfo.totalBytesExpectedToSend);
 				})
 			},
+			// 取消所有上传任务 (已经上传成功的是没法取消的 只能取消正在上传的任务)
 			cancelUploadImage: function() {
 				this.imageUrl.forEach(item => {
 					if (item.uploadTask && item.uploading) {
@@ -168,6 +187,7 @@
 					}
 				})
 			},
+			// 获取所有上传成功的图片的服务器地址
 			getImageUrls: function() {
 				let arr = []
 				this.imageUrl.forEach(item => {
