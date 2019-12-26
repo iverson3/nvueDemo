@@ -19,8 +19,6 @@
 		<button type="primary" class="mt-2" @click="uploadImage" :disabled="isUploading">上传图片</button>
 		<button type="default" class="mt" @click="cancelUploadImage">取消上传</button>
 		<button v-if="showReupload" type="default" class="mt" @click="uploadImage" :disabled="isUploading">再次尝试</button>
-		
-		
 		<button type="primary" class="mt-2" @click="getImageUrls">获得图片地址</button>
 		
 		
@@ -41,7 +39,8 @@
 				imageUrl: [],
 				curUploadIndex: 0,
 				tempFilePathArr: [],  // 图片临时路径数组(用来防止重复选择图片)
-				isUploading: false    // 是否有图片正在上传中（全局的标识 防止用户重复点击上传按钮）
+				isUploading: false,   // 是否有图片正在上传中（全局的标识 防止用户重复点击上传按钮）
+				sizeLimit: 600000,    // 图片大小限制 (单位 B)
 			}
 		},
 		computed: {
@@ -50,7 +49,7 @@
 			},
 			showReupload() {
 				let show = this.imageUrl.every(item => item.uploadRes === true || item.uploadRes === null)
-				return !show
+				return !show && !this.isUploading
 			}
 		},
 		onLoad: function() {
@@ -66,13 +65,11 @@
 					success: (res) => {
 						console.log(res);
 						// 判断是否有图片过大
-						let pass = res.tempFiles.every(item => item.size <= 600000)
-						if (!pass) {
-							uni.showModal({content: '过大的图片未被使用', showCancel: false});
-						}
+						let pass = res.tempFiles.every(item => item.size <= this.sizeLimit)
+						if (!pass) uni.showModal({content: '过大的图片未被使用', showCancel: false});
 						
 						// 过滤掉图片大小不满足条件的图片
-						let images = res.tempFiles.filter(item => item.size <= 600000)
+						let images = res.tempFiles.filter(item => item.size <= this.sizeLimit)
 						// 过滤掉重复选择的相同的图片
 						images = images.filter(item => {
 							let index = this.tempFilePathArr.indexOf(item.path)
