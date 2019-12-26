@@ -1,6 +1,27 @@
 <template>
 	<view>
+		<text class="iconfont2 font-md p-2" @click="chooseImage">&#xe626;</text>
 		
+		<view v-if="showImage" class="w-100 p-1 flex-row">
+			<block v-for="(item,index) in imageUrl" :key="index">
+				<view class="flex-1 p-1">
+					<image :src="item.path" @click="previewImage(index)" mode="widthFix" class="flex-1" style="height: 150upx;width: 150upx;">
+						<view v-if="item.uploading || item.uploadRes === false" class="position-absolute top-0 left-0 right-0 bottom-0 bg-white" style="height: 170upx;width: 170upx;opacity: 0.7;"></view>
+						<text v-if="item.uploading" class="position-absolute" style="top:84upx;left:50upx;z-index:1000;">{{ item.progress }}%</text>
+						<text v-if="item.uploadRes === false && !item.uploading" class="position-absolute" style="top:84upx;left:70upx;z-index:1000;">失败</text>
+					</image>
+					
+					<text v-if="!item.uploading && item.uploadRes !== true" @click.stop="deleteImage(index)" class="position-absolute right-0 top-0 iconfont2" style="z-index:10000;">&#xe6f0;</text>
+				</view>
+			</block>
+		</view>
+		
+		<button type="primary" class="mt-2" @click="uploadImage">上传图片</button>
+		<button type="default" class="mt" @click="cancelUploadImage">取消上传</button>
+		<button v-if="showReupload" type="default" class="mt" @click="uploadImage">再次尝试</button>
+		
+		
+		<button type="primary" class="mt-2" @click="getImageUrls">获得图片地址</button>
 		
 		
 		<view class="w-100" style="height: 50px;"></view>
@@ -17,14 +38,145 @@
 		},
 		data() {
 			return {
+				imageUrl: [],
 				
+				curUploadIndex: 0
+			}
+		},
+		computed: {
+			showImage() {
+				return this.imageUrl.length > 0
+			},
+			showReupload() {
+				let show = this.imageUrl.every(item => item.uploadRes === true || item.uploadRes === null)
+				return !show
 			}
 		},
 		onLoad: function() {
 			
 		},
 		methods: {
-			
+			chooseImage: function() {
+				if (this.imageUrl.length === 9) {
+					return uni.showToast({title: '最多上传9张', icon: 'none'});
+				}
+				uni.chooseImage({
+					count: 9 - this.imageUrl.length,
+					success: (res) => {
+						console.log(res);
+						// res.tempFiles[0].path
+						// res.tempFiles[0].size
+						let pass = res.tempFiles.every(item => item.size <= 600000)
+						if (!pass) return uni.showToast({title: '图片过大', icon: 'none'});
+						
+						res.tempFiles.forEach((item) => {
+							item.uploadTask = null
+							item.uploading = false
+							item.progress = 0
+							item.uploadRes = null
+							item.imageServerLink = ''
+						})
+						
+						this.imageUrl = [...this.imageUrl, ...res.tempFiles]
+					},
+					fail: (err) => {
+						uni.showToast({title: '选择图片失败', icon: 'none'});
+						console.log(err);
+					}
+				})
+			},
+			deleteImage: function(index) {
+				this.imageUrl.splice(index, 1)
+			},
+			previewImage: function(index) {
+				let pathArr = []
+				this.imageUrl.forEach(item => {
+					pathArr.push(item.path)
+				})
+				uni.previewImage({
+					current: index,
+					urls: pathArr,
+					loop: true
+				})
+			},
+			uploadImage: function() {
+				this.curUploadIndex = -1
+				this.queueUpload()
+			},
+			queueUpload: function() {
+				this.curUploadIndex++
+				if (this.imageUrl.length === 0) return
+				if (this.curUploadIndex >= this.imageUrl.length) return
+				
+				let item = this.imageUrl[this.curUploadIndex]
+				// 跳过已经上传成功了的
+				if (item.uploadRes) {
+					this.queueUpload()
+					return
+				}
+				
+				item.uploading = true
+				item.uploadTask = uni.uploadFile({
+					url: "https://web.ukuhub.com/api/activity/join/uploadPic",
+					filePath: item.path,
+					name: "imgBlob",
+					success: (res) => {
+						console.log(res);
+						item.uploading = false
+						this.queueUpload()
+						
+						if (!res.data || res.data === '') {
+							// 上传失败
+							item.uploadRes = false
+							return
+						}
+						// 将服务端返回的数据json化成对象
+						let obj = JSON.parse(res.data)
+						if (obj.success) {
+							// 上传成功
+							item.uploadRes = true
+							// 保存返回的图片地址
+							item.imageServerLink = obj.url
+						} else {
+							// 上传失败
+							item.uploadRes = false
+							console.log(obj.error);
+						}
+						
+					},
+					fail: (err) => {
+						console.log(err);
+						item.uploadRes = false
+						item.uploading = false
+						this.queueUpload()
+					}
+				})
+				
+				// 监听上传进度
+				item.uploadTask.onProgressUpdate((uploadInfo) => {
+					// console.log(uploadInfo);
+					item.progress = uploadInfo.progress
+					console.log(uploadInfo.progress, uploadInfo.totalBytesSent, uploadInfo.totalBytesExpectedToSend);
+				})
+			},
+			cancelUploadImage: function() {
+				this.imageUrl.forEach(item => {
+					if (item.uploadTask && item.uploading) {
+						item.uploadTask.abort()
+						item.uploading = false
+						item.uploadRes = false
+					}
+				})
+			},
+			getImageUrls: function() {
+				let arr = []
+				this.imageUrl.forEach(item => {
+					if (item.imageServerLink !== '') {
+						arr.push(item.imageServerLink)
+					}
+				})
+				console.log(arr.join(","));
+			}
 		}
 	}
 </script>

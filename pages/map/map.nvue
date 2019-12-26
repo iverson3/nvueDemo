@@ -1,6 +1,8 @@
 <template>
 	<view>
-		
+		<map v-if="showMap" :latitude="mapSet.latitude" :longitude="mapSet.longitude" :scale="mapSet.scale" 
+		:show-location="true" :covers="mapSet.covers" :circles="mapSet.circles"
+		class="w-100" :style="{ height: height }"></map>
 		
 		
 		<view class="w-100" style="height: 50px;"></view>
@@ -17,11 +19,68 @@
 		},
 		data() {
 			return {
-				
+				showMap: false,
+				height: 0,
+				mapSet: {
+					latitude: 0,
+					longitude: 0,
+					scale: 18,      // 缩放级别，取值范围为5-18
+					
+					covers: [{
+							id: 5,
+							title: 'cover title',
+							latitude: 0,
+							longitude: 0,
+							iconPath: '/static/bgm.png',
+							width: '100px',
+							height: '100px'
+						}
+					],
+					circles: [{
+							latitude: 0,
+							longitude: 0,
+							radius: 100,
+							strokeWidth: 2,
+							color: "#428BCA88",
+							// fillColor: "#B6E1F248",
+						}
+					]
+				}
 			}
 		},
 		onLoad: function() {
+			//#ifdef APP-PLUS
+			plus.screen.lockOrientation("portrait-primary")
+			//#endif
+			let sysheight = uni.getSystemInfoSync().windowHeight
+			this.height = `${sysheight}px` 
 			
+			uni.getLocation({
+				// type: 'wgs84',
+				type: 'gcj02',
+				success: (res) => {
+					console.log(res);
+					this.mapSet.latitude = res.latitude
+					this.mapSet.longitude = res.longitude
+					
+					this.mapSet.covers.forEach(item => {
+						item.latitude = res.latitude
+						item.longitude = res.longitude
+					})
+					console.log(this.mapSet.covers[0]);
+					this.mapSet.circles.forEach(item => {
+						item.latitude = res.latitude
+						item.longitude = res.longitude
+					})
+					
+					this.showMap = true
+				},
+				fail: (err) => {
+					this.showMap = false
+					uni.showToast({title: '获取定位失败', icon: 'none'});
+					console.log(err);
+				}
+			});
 		},
 		methods: {
 			
