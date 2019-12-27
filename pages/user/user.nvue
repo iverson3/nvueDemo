@@ -1,6 +1,19 @@
 <template>
 	<view>
-		<view class="flex-1 j-center a-center" style="height: 1000upx;" @click="gotoDouyin">
+		<view v-if="messageList.length > 0" class="w-100 border">
+			<block v-for="(item,index) in messageList" :key="index">
+				<view class="w-100 flex-row p-1" :class="item.from === 1? 'j-end':'j-start'">
+					<text class="p bg-secondary rounded">{{ item.msg }}</text>
+				</view>
+			</block>
+		</view>
+		<view class="flex-row">
+			<input type="text" v-model="message" class="border ml-1" style="width: 450upx;height: 98upx;" />
+			<button type="default" class="ml-1" @click="sendMessage">发送</button>
+		</view>
+		
+		
+		<view class="flex-1 j-center a-center" @click="gotoDouyin">
 			<text class="font-md">进入抖音</text>
 		</view>
 		
@@ -12,55 +25,88 @@
 
 <script>
 	import dyTabbar from '@/components/common/dy-tabbar.nvue';
-	
+
 	export default {
 		components: {
 			dyTabbar
 		},
 		data() {
 			return {
-				socketTask: null
+				socketTask: null,
+				
+				goEasy: null,
+				message: "",
+				messageList: [],
 			}
 		},
 		onShow: function() {
-			uni.connectSocket({
-				url: 'ws://47.107.149.234:10001',
-				success: (res) => {
-					console.log(res);
-				},
-				fail: (err) => {
-					console.log(err);
-				}
-			});
-			uni.onSocketOpen(function (res) {
-				console.log('WebSocket连接已打开！');
-			});
-			uni.onSocketError(function (res) {
-			  console.log('WebSocket连接打开失败，请检查！');
-			});
+			if (!this.goEasy) {
+				this.goEasy = getApp().globalData.goEasy
+			}
+			
+			// console.log(this.$goEasy);
+			console.log(this.$help);
+			
+			// console.log(this.$socket);
+			// this.$socket.connectSocket({
+			// 	url: 'http://47.107.149.234:10001/',
+			// 	success: (res) => {
+			// 		console.log(res);
+			// 	},
+			// 	fail: (err) => {
+			// 		console.log(err);
+			// 	}
+			// });
+			// this.$socket.onSocketOpen(function (res) {
+			// 	console.log('WebSocket连接已打开！');
+			// });
+			// this.$socket.onSocketError(function (res) {
+			// 	console.log('WebSocket连接打开失败，请检查！');
+			// });
 		},
 		onLoad: function() {
+			this.goEasy = getApp().globalData.goEasy
 			
-			return
+			this.goEasy.subscribe({
+			    channel: "commonchat", // 监听的channel频道
+			    onMessage: (message) => {
+			        console.log("Channel:" + message.channel + " content:" + message.content);
+					
+					let froms = 2
+					if (this.message === message.content) {
+						froms = 1
+						this.message = ""
+					}
+					
+					this.messageList.push({
+						id: 1,
+						user: 'new Date()',
+						from: froms,  // 1-自己 2-别人
+						msg: message.content,
+						time: (new Date()).getTime()
+					})
+			    }
+			});
 			
-			this.socketTask = uni.connectSocket({
-				url: "ws://47.107.149.234:10001",
-				success: (res) => {
-					console.log(res);
-				},
-				fail: (err) => {
-					uni.showToast({title: 'socket连接失败', icon: 'none'});
-					console.log(err);
-				}
-			})
-			uni.onSocketOpen((res) => {
-				console.log(res);
-			})
 			
-			this.socketTask.onMessage((data) => {
-				console.log('data from server');
-				console.log(data);
-			})
+			// this.socketTask = uni.connectSocket({
+			// 	url: "ws://47.107.149.234:10001",
+			// 	success: (res) => {
+			// 		console.log(res);
+			// 	},
+			// 	fail: (err) => {
+			// 		uni.showToast({title: 'socket连接失败', icon: 'none'});
+			// 		console.log(err);
+			// 	}
+			// })
+			// uni.onSocketOpen((res) => {
+			// 	console.log(res);
+			// })
+			
+			// this.socketTask.onMessage((data) => {
+			// 	console.log('data from server');
+			// 	console.log(data);
+			// })
 			// this.socketTask.send({
 			// 	data: "2222",
 			// 	success: (res) => {
@@ -73,13 +119,24 @@
 			// })
 		},
 		onUnload: function() {
-			if (this.socketTask) this.socketTask.close()
+			// if (this.socketTask) this.socketTask.close()
 		},
 		methods: {
 			gotoDouyin: function() {
 				uni.switchTab({
 					url: '/pages/douyin/douyin'
 				})
+			},
+			
+			sendMessage: function() {
+				if (this.message === '') return uni.showToast({title: '消息不能为空', icon: "none"});
+				
+				this.goEasy.publish({
+				    channel: "commonchat", // 发送消息到具体哪个channel频道
+				    message: this.message 
+				});
+				
+				// this.message = ""
 			}
 		}
 	}

@@ -6,6 +6,10 @@
 		},
 		
 		onLaunch: function() {
+			var app = this.globalData;
+			app.goEasy = this.$goEasy
+			
+			
 			console.log('App Launch')
 			// app平台 则使用weex dom模块引入本地(网络)ttf资源
 			// 非app平台 则在下面style里使用import方式引入本地css文件 (@import "./common/icon.css";)

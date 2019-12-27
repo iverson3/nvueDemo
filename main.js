@@ -4,6 +4,23 @@ import store from './store/index.js';
 import request from './common/lib/request.js';
 import helper from './common/lib/helper.js';
 
+import GoEasy from './common/js/goEasy/goeasy-1.0.3.js';
+// 初始化全局的GoEasy对象
+Vue.prototype.$goEasy = new GoEasy({
+    host: "hangzhou.goeasy.io", // 应用所在的区域地址: 【hangzhou.goeasy.io | singapore.goeasy.io】
+    appkey: "BC-d6c6d2c2b30d45298e709d6531e2848d", // 应用appkey
+    onConnected: function() {
+        console.log('连接成功！')
+    },
+    onDisconnected: function() {
+        console.log('连接断开！')
+    },
+    onConnectFailed: function(error) {
+        console.log('连接失败或错误！')
+    }
+});
+
+
 Vue.prototype.$store = store
 Vue.prototype.$api = request
 Vue.prototype.$help = helper
