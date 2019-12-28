@@ -134,12 +134,13 @@
 				this.submitComment()
 			})
 			
-			// 页面加载的时候 获取视频数据
+			// 页面加载的时候 获取前五个视频数据
 			let data = this.randGenerateVideoData()
 			this.playIndex = 0
+			// 初始化播放列表和视频列表 (注意 playList和videoList是指向的同一个引用)
+			// 所以在后面修改点赞字段或评论列表时 只需修改其中一个list数据即可
 			this.playList = data;
 			this.videoList = data;
-			
 			
 			// #ifdef APP-PLUS
 			this.wv = plus.webview.currentWebview();
@@ -346,13 +347,12 @@
 					return this.closeComment()
 				}
 				
-				
 				if (this.startClick) { 
 					// 双击
 					console.log('double click');
 					this.startClick = false
 					this.videoList[this.videoIndex].liked = true
-					this.playList[this.playIndex].liked = true
+					// this.playList[this.playIndex].liked = true
 				} else {
 					this.startClick = true
 					setTimeout(() => {
@@ -403,7 +403,7 @@
 			dolike: function() {
 				this.preventClickToVideo()
 				this.videoList[this.videoIndex].liked = !this.videoList[this.videoIndex].liked
-				this.playList[this.playIndex].liked = !this.playList[this.playIndex].liked
+				// this.playList[this.playIndex].liked = !this.playList[this.playIndex].liked
 			},
 			// 显示评论列表面板
 			showComment: function() {
@@ -465,7 +465,7 @@
 					likes: 0
 				}
 				this.videoList[this.videoIndex].commentList.push(comment)
-				this.playList[this.playIndex].commentList.push(comment)
+				// this.playList[this.playIndex].commentList.push(comment)
 				this.commentInfo = ""
 				uni.$emit('commitSuccess')
 				uni.$emit('setCommentList', {

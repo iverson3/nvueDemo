@@ -65,7 +65,6 @@
 		},
 		methods: {
 			closeComment: function() {
-				console.log('5555555555555');
 				uni.$emit('closeCommentFromSub')
 			},
 			submitComment: function() {
