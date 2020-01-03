@@ -49,6 +49,47 @@
 			}
 		},
 		onLoad: function() {
+			
+			let socketTask = uni.connectSocket({
+				url: "ws://47.107.149.234:8889",
+				success: (res) => {
+					console.log('ok');
+					console.log(res);
+				},
+				fail: (err) => {
+					uni.showToast({title: 'socket连接失败', icon: 'none'});
+					console.log(err);
+				}
+			})
+			uni.onSocketOpen((res) => {
+				console.log('socket open');
+				console.log(res);
+			})
+			uni.onSocketError(function(err){
+				console.log(err);
+			})
+			uni.onSocketClose(function(res){
+				console.log(res);
+			})
+			
+			// this.socketTask.onMessage((data) => {
+			// 	console.log('data from server');
+			// 	console.log(data);
+			// })
+			// this.socketTask.send({
+			// 	data: "2222",
+			// 	success: (res) => {
+			// 		console.log(res);
+			// 	},
+			// 	fail: (err) => {
+			// 		uni.showToast({title: '数据发送失败', icon: 'none'});
+			// 		console.log(err);
+			// 	}
+			// })
+			
+			
+			
+			
 			//#ifdef APP-PLUS
 			plus.screen.lockOrientation("portrait-primary")
 			//#endif
