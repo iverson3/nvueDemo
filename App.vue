@@ -1,4 +1,9 @@
 <script>
+	import request from './common/lib/request.js';
+	import helper from './common/lib/helper.js';
+	import utils from './common/lib/utils.js';
+	import GoEasy from './common/js/goEasy/goeasy-1.0.3.js';
+	
 	export default {
 		// 定义全局变量 (任何页面都可以获取和修改)
 		globalData: {
@@ -6,8 +11,51 @@
 		},
 		
 		onLaunch: function() {
+			// 在nvue uni-app编译模式下 因为无法挂载对象或方法到Vue原型上
+			// 替代方案是 把对象或方法挂载在globalData上面 达到类似的全局使用效果
 			var app = this.globalData;
-			app.goEasy = this.$goEasy
+			
+			app.logo = "mp-logo"
+			
+			app.$api = request
+			app.$help = helper
+			app.utils = utils
+			
+			// 初始化全局的GoEasy对象
+			app.goEasy = new GoEasy({
+				host: "hangzhou.goeasy.io", // 应用所在的区域地址: 【hangzhou.goeasy.io | singapore.goeasy.io】
+				appkey: "BC-d6c6d2c2b30d45298e709d6531e2848d", // 应用appkey
+				onConnected: function() {
+					console.log('连接成功！')
+				},
+				onDisconnected: function() {
+					console.log('连接断开！')
+				},
+				onConnectFailed: function(error) {
+					console.log('连接失败或错误！')
+				}
+			});
+			
+			// 登录权限跳转
+			// 自定义一个跳转方法 挂载到Vue上，该跳转方法提供对登录权限的验证
+			// 即跳转前判断用户是否处于登录状态: 已经登录就进行正常跳转，没有登录则提示并跳到登录页面 
+			app.navigateTo = (options) => {
+				// this.$store.commit('initUserStatus')
+				// 判断用户是否登录
+				if (!this.$store.state.user.loginStatus) {
+					uni.showToast({title: '请先登录', icon: 'none'});
+					return
+					// return uni.navigateTo({url: '/pages/login/login'});
+				}
+				// 用户处于登录中 则正常跳转
+				uni.navigateTo(options);
+			}
+			
+			// 判断用户是否处于登录状态
+			app.isLogin = () => {
+				if (this.$store.state.user.loginStatus && this.$store.state.user.loginStatus === true) return true
+				return false
+			}
 			
 			
 			console.log('App Launch')

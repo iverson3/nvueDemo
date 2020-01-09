@@ -44,8 +44,8 @@
 				this.goEasy = getApp().globalData.goEasy
 			}
 			
-			// console.log(this.$goEasy);
-			console.log(this.$help);
+			// console.log(this.goEasy);
+			// console.log(this.$help);
 			
 			// console.log(this.$socket);
 			// this.$socket.connectSocket({

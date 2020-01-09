@@ -130,10 +130,44 @@
 		},
 		onLoad: function(e) {
 			this.getData()
+			let $app = getApp().globalData
+			
+			// this.$api.get("http://www.baidu.com").then(res => {})
+			console.log($app.$help);
+			
+			let res = $app.utils.getHoroscope(1578582274)
+			console.log(res);
+			
+			// $app.$api.get("http://www.baidu.com").then(res => {})
+			
 			
 			// 获取globalData全局数据 (全端通用)
-			let appName = getApp().globalData.appName
+			let appName = $app.appName
 			console.log(appName);
+			
+			// 将navigateTo()挂载在globalData上
+			$app.navigateTo({
+				url: "../put/put"
+			})
+			
+			console.log($app.logo);
+			
+			// $app.navigateTo({
+			// 	url: "/pages/put/put"
+			// })
+			
+			// let a = this.isLogin()
+			// console.log(a);
+			
+			// console.log(this.$help);
+			
+			// this.navigateTo({
+			// 	url: "/pages/put/put"
+			// })
+			
+			
+			console.log(this.$store);
+			console.log(this.$store.state);
 			
 			console.log(this.$store.state.user);
 			console.log(this.$store.state.user.loginStatus);
